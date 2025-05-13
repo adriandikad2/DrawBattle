@@ -163,7 +163,7 @@ function WaitingRoomPage() {
             <ol>
               <li>Each round, you'll be given a prompt to draw</li>
               <li>You have {room.drawingTime} seconds to create your drawing</li>
-              <li>After drawing, everyone votes on each other's drawings</li>
+              <li>After drawing, everyone stars on each other's drawings</li>
               <li>The player with the highest score wins!</li>
             </ol>
           </div>

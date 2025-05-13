@@ -203,7 +203,7 @@ router.get("/:roomId/drawing-to-vote", authenticateToken, async (req, res) => {
     const currentDrawing = drawingsResult.rows[currentDrawingIndex]
 
     // Check if user has already voted on this drawing
-    const voteResult = await pool.query("SELECT * FROM votes WHERE drawing_id = $1 AND voter_id = $2", [
+    const voteResult = await pool.query("SELECT * FROM stars WHERE drawing_id = $1 AND voter_id = $2", [
       currentDrawing.id,
       userId,
     ])
@@ -277,7 +277,7 @@ router.post("/vote", authenticateToken, async (req, res) => {
     const room = roomResult.rows[0]
 
     // Check if user has already voted on this drawing
-    const existingVoteResult = await pool.query("SELECT * FROM votes WHERE drawing_id = $1 AND voter_id = $2", [
+    const existingVoteResult = await pool.query("SELECT * FROM stars WHERE drawing_id = $1 AND voter_id = $2", [
       drawingId,
       userId,
     ])
@@ -287,7 +287,7 @@ router.post("/vote", authenticateToken, async (req, res) => {
     }
 
     // Submit vote
-    await pool.query("INSERT INTO votes (drawing_id, voter_id, rating) VALUES ($1, $2, $3)", [
+    await pool.query("INSERT INTO stars (drawing_id, voter_id, rating) VALUES ($1, $2, $3)", [
       drawingId,
       userId,
       rating,
@@ -298,7 +298,7 @@ router.post("/vote", authenticateToken, async (req, res) => {
       drawing.room_id,
     ])
 
-    const voteCountResult = await pool.query("SELECT COUNT(*) FROM votes WHERE drawing_id = $1", [drawingId])
+    const voteCountResult = await pool.query("SELECT COUNT(*) FROM stars WHERE drawing_id = $1", [drawingId])
 
     const playerCount = Number.parseInt(playerCountResult.rows[0].count)
     const voteCount = Number.parseInt(voteCountResult.rows[0].count)
@@ -393,7 +393,7 @@ router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
       const ratingsResult = await pool.query(
         `SELECT AVG(v.rating) as avg_rating
          FROM drawings d
-         JOIN votes v ON d.id = v.drawing_id
+         JOIN stars v ON d.id = v.drawing_id
          WHERE d.room_id = $1 AND d.artist_id = $2`,
         [roomId, player.user_id],
       )
@@ -418,7 +418,7 @@ router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
        FROM drawings d
        JOIN users u ON d.artist_id = u.id
        JOIN prompts p ON d.prompt_id = p.id
-       LEFT JOIN votes v ON d.id = v.drawing_id
+       LEFT JOIN stars v ON d.id = v.drawing_id
        WHERE d.room_id = $1
        GROUP BY d.id, p.text, u.username
        ORDER BY d.round_number, d.created_at`,
