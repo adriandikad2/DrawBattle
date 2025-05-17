@@ -12,11 +12,27 @@ function LobbyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { currentTheme } = useTheme()
-
   useEffect(() => {
-    const fetchRooms = async () => {
+    // Add functionality to leave any current room when entering the lobby
+    const leaveCurrentRooms = async () => {
+      try {
+        // Call the leaveAllRooms endpoint to ensure user is not in any room
+        await roomService.leaveAllRooms();
+        console.log("Successfully left all rooms");
+      } catch (error) {
+        console.error("Failed to leave rooms:", error);
+        // Don't show error to user as this is a silent cleanup operation
+      }
+    };
+    
+    // Initial fetch with loading state
+    const fetchRoomsInitial = async () => {
       try {
         setLoading(true)
+        
+        // First leave any rooms the user might be in
+        await leaveCurrentRooms();
+        
         const response = await roomService.getRooms()
         setRooms(response.data)
         setError(null)
@@ -28,11 +44,24 @@ function LobbyPage() {
         setLoading(false)
       }
     }
+    
+    // Silent refresh for polling
+    const fetchRoomsSilent = async () => {
+      try {
+        const response = await roomService.getRooms()
+        setRooms(response.data)
+        setError(null)
+      } catch (error) {
+        console.error("Failed to poll rooms", error)
+        // Don't show error toast on silent refresh failures
+      }
+    }
 
-    fetchRooms()
+    // Initial load
+    fetchRoomsInitial()
 
-    // Poll for room updates every 10 seconds
-    const interval = setInterval(fetchRooms, 10000)
+    // Poll for room updates every 10 seconds without showing loading state
+    const interval = setInterval(fetchRoomsSilent, 10000)
     return () => clearInterval(interval)
   }, [])
   return (

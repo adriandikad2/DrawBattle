@@ -17,9 +17,11 @@ function VotingPage() {
   const [hasVoted, setHasVoted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
+  const [autoVoteTimeout, setAutoVoteTimeout] = useState(null)
+  
   useEffect(() => {
-    const fetchDrawingToVote = async () => {
+    // Initial load with loading indicator
+    const fetchDrawingToVoteInitial = async () => {
       try {
         setLoading(true)
         const response = await gameService.getDrawingToVote(roomId)
@@ -38,7 +40,8 @@ function VotingPage() {
         }
 
         setCurrentDrawing(response.data.drawing)
-        setTimeLeft(response.data.timeLeft)
+        // Ensure at least 8 seconds for voting to prevent immediate "time's up"
+        setTimeLeft(Math.max(8, response.data.timeLeft))
         setVotingProgress({
           current: response.data.currentDrawingIndex + 1,
           total: response.data.totalDrawings,
@@ -53,13 +56,103 @@ function VotingPage() {
         setLoading(false)
       }
     }
+    
+    // Silent update for polling
+    const fetchDrawingToVoteSilent = async () => {
+      try {
+        // Don't set loading state during polling
+        const response = await gameService.getDrawingToVote(roomId)
 
-    fetchDrawingToVote()
+        // Check if we're in the voting phase
+        if (response.data.phase !== "voting") {
+          // Redirect to the appropriate page based on the game phase
+          if (response.data.phase === "drawing") {
+            navigate(`/round/${roomId}`)
+          } else if (response.data.phase === "results") {
+            navigate(`/leaderboard/${roomId}`)
+          } else {
+            navigate(`/room/${roomId}`)
+          }
+          return
+        }
 
-    // Poll for updates every 3 seconds
-    const interval = setInterval(fetchDrawingToVote, 3000)
-    return () => clearInterval(interval)
-  }, [roomId, navigate])
+        // Compare the current drawing with the new one
+        const newDrawingId = response.data.drawing?.id
+        const currentDrawingId = currentDrawing?.id
+        
+        // If drawing changed, reset vote state
+        if (newDrawingId !== currentDrawingId) {
+          setCurrentDrawing(response.data.drawing)
+          // Give at least 8 seconds for new drawings
+          setTimeLeft(Math.max(8, response.data.timeLeft))
+          setHasVoted(response.data.hasVoted || false)
+          
+          // Clear any existing auto-vote timeout
+          if (autoVoteTimeout) {
+            clearTimeout(autoVoteTimeout)
+          }
+        } else {
+          // Only update timeLeft if:
+          // 1. The new value is significantly different (>3s difference)
+          // 2. The server time is higher than our current time (server refreshed the timer)
+          // 3. The current timer is near zero (to refresh if server extended time)
+          if (
+            Math.abs(response.data.timeLeft - timeLeft) > 3 || 
+            response.data.timeLeft > timeLeft ||
+            timeLeft < 2
+          ) {
+            // Ensure at least 5 seconds for voting during polling updates
+            setTimeLeft(Math.max(5, response.data.timeLeft))
+          }
+          
+          setHasVoted(response.data.hasVoted || false)
+        }
+        
+        setVotingProgress({
+          current: response.data.currentDrawingIndex + 1,
+          total: response.data.totalDrawings,
+        })
+        
+        setError(null)
+      } catch (error) {
+        console.error("Failed to poll drawing to vote", error)
+        // Only show error for critical issues during polling
+      }
+    }
+
+    fetchDrawingToVoteInitial()
+
+    // Poll for voting updates every 3 seconds without showing loading indicator
+    const interval = setInterval(fetchDrawingToVoteSilent, 3000)
+    return () => {
+      clearInterval(interval)
+      if (autoVoteTimeout) clearTimeout(autoVoteTimeout)
+    }
+  }, [roomId, navigate, currentDrawing, timeLeft, autoVoteTimeout])
+
+  // Auto-vote functionality to ensure game keeps moving
+  useEffect(() => {
+    // Only set up auto-vote if there's a drawing, user hasn't voted, it's not their own drawing, and time is running
+    if (currentDrawing && !hasVoted && !currentDrawing.isOwnDrawing && timeLeft > 0) {
+      // Auto-vote 2 seconds before time runs out
+      const autoVoteTimer = setTimeout(() => {
+        if (!hasVoted && !loading) {
+          console.log("Auto-voting as time is about to run out");
+          // Choose a random rating between 3-5 stars for auto-vote
+          const randomRating = Math.floor(Math.random() * 3) + 3;
+          handleVote(randomRating);
+          toast.info("Auto-voted as time was running out");
+        }
+      }, (timeLeft - 2) * 1000);
+      
+      setAutoVoteTimeout(autoVoteTimer)
+
+      return () => {
+        clearTimeout(autoVoteTimer);
+        setAutoVoteTimeout(null)
+      };
+    }
+  }, [currentDrawing, hasVoted, timeLeft, loading]);
 
   const handleVote = async (rating) => {
     if (!currentDrawing || hasVoted) return

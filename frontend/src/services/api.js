@@ -31,6 +31,8 @@ export const roomService = {
   joinRoom: (roomId) => api.post(`/rooms/${roomId}/join`),
 
   leaveRoom: (roomId) => api.post(`/rooms/${roomId}/leave`),
+  
+  leaveAllRooms: () => api.post(`/rooms/leave-all`),
 
   startGame: (roomId) => api.post(`/rooms/${roomId}/start`),
 

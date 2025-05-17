@@ -8,8 +8,8 @@ import { toast } from "react-toastify"
 function CreateRoomPage() {
   const [roomName, setRoomName] = useState("")
   const [maxPlayers, setMaxPlayers] = useState(6)
-  const [drawingTime, setDrawingTime] = useState(60)
-  const [votingTime, setVotingTime] = useState(15)
+  const [drawingTime, setDrawingTime] = useState(120) // Changed from 60 to 120 seconds
+  const [votingTime, setVotingTime] = useState(20) // Changed from 15 to 20 seconds
   const [rounds, setRounds] = useState(3)
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -39,9 +39,23 @@ function CreateRoomPage() {
       navigate(`/room/${response.data.id}`)
     } catch (error) {
       console.error("Failed to create room", error)
-      toast.error(error.response?.data?.message || "Failed to create room. Please try again.")
+      toast.error(
+        error.response?.data?.message || "Failed to create room. Please try again."
+      )
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleBackToLobby = async () => {
+    try {
+      // Leave all rooms before navigating to lobby
+      await roomService.leaveAllRooms()
+      navigate("/lobby")
+    } catch (error) {
+      console.error("Failed to leave rooms", error)
+      // Navigate anyway
+      navigate("/lobby")
     }
   }
 
@@ -49,9 +63,9 @@ function CreateRoomPage() {
     <div className="create-room-page">
       <div className="page-header">
         <h1>Create a New Room</h1>
-        <Link to="/lobby" className="btn btn-secondary">
+        <button onClick={handleBackToLobby} className="btn btn-secondary">
           Back to Lobby
-        </Link>
+        </button>
       </div>
 
       <div className="form-card">
@@ -88,7 +102,12 @@ function CreateRoomPage() {
 
             <div className="form-group">
               <label htmlFor="rounds">Number of Rounds</label>
-              <select id="rounds" value={rounds} onChange={(e) => setRounds(Number(e.target.value))} disabled={loading}>
+              <select
+                id="rounds"
+                value={rounds}
+                onChange={(e) => setRounds(Number(e.target.value))}
+                disabled={loading}
+              >
                 {[1, 2, 3, 5, 10].map((num) => (
                   <option key={num} value={num}>
                     {num} Round{num !== 1 ? "s" : ""}
@@ -144,7 +163,11 @@ function CreateRoomPage() {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
               {loading ? "Creating Room..." : "Create Room"}
             </button>
           </div>

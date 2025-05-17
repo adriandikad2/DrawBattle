@@ -16,9 +16,10 @@ function DrawingPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
+  
   useEffect(() => {
-    const fetchGameState = async () => {
+    // Initial load with loading indicator
+    const fetchGameStateInitial = async () => {
       try {
         setLoading(true)
         const response = await gameService.getGameState(roomId)
@@ -37,7 +38,9 @@ function DrawingPage() {
         }
 
         setPrompt(response.data.prompt)
-        setTimeLeft(response.data.timeLeft)
+        // Ensure initial timeLeft is at least 5 seconds to prevent immediate "time's up"
+        // This gives users more time to see the prompt and start drawing
+        setTimeLeft(Math.max(5, response.data.timeLeft))
         setIsSubmitted(response.data.hasSubmitted || false)
         setError(null)
       } catch (error) {
@@ -48,13 +51,57 @@ function DrawingPage() {
         setLoading(false)
       }
     }
+    
+    // Silent update for polling
+    const fetchGameStateSilent = async () => {
+      try {
+        // Don't show loading indicator during polling
+        const response = await gameService.getGameState(roomId)
 
-    fetchGameState()
+        // Check if we're in the drawing phase
+        if (response.data.phase !== "drawing") {
+          // Redirect to the appropriate page based on the game phase
+          if (response.data.phase === "voting") {
+            navigate(`/voting/${roomId}`)
+          } else if (response.data.phase === "results") {
+            navigate(`/leaderboard/${roomId}`)
+          } else {
+            navigate(`/room/${roomId}`)
+          }
+          return
+        }        
 
-    // Poll for game state updates every 5 seconds
-    const interval = setInterval(fetchGameState, 5000)
+        // Update state without showing loading indicator
+        setPrompt(response.data.prompt)
+        
+        // Only update timeLeft if:
+        // 1. The new value is significantly different (>5s difference)
+        // 2. The server time is higher than our current time (server refreshed the timer)
+        // 3. The current timer is near zero (to refresh if server extended time)
+        if (
+          Math.abs(response.data.timeLeft - timeLeft) > 5 || 
+          response.data.timeLeft > timeLeft ||
+          timeLeft < 3
+        ) {
+          // Ensure we never set time to less than 5 seconds from a poll
+          // This gives users a better experience
+          setTimeLeft(Math.max(5, response.data.timeLeft))
+        }
+        
+        setIsSubmitted(response.data.hasSubmitted || false)
+        setError(null)
+      } catch (error) {
+        console.error("Failed to poll game state", error)
+        // Only show error for critical issues during polling
+      }
+    }
+
+    fetchGameStateInitial()
+
+    // Poll for game state updates every 5 seconds without showing loading indicator
+    const interval = setInterval(fetchGameStateSilent, 5000)
     return () => clearInterval(interval)
-  }, [roomId, navigate])
+  }, [roomId, navigate, timeLeft])
 
   const handleDrawingSubmit = async (drawingData) => {
     try {
@@ -89,7 +136,6 @@ function DrawingPage() {
       </div>
     )
   }
-
   return (
     <div className="drawing-page">
       <div className="game-header">
@@ -106,10 +152,11 @@ function DrawingPage() {
           <div className="loading-spinner"></div>
         </div>
       ) : (
-        <DrawingCanvas onSave={handleDrawingSubmit} timeLeft={timeLeft} disabled={timeLeft <= 0} />
+        <DrawingCanvas onSave={handleDrawingSubmit} timeLeft={timeLeft} disabled={timeLeft <= 0 && !loading} />
       )}
 
-      {timeLeft <= 0 && !isSubmitted && (
+      {/* Only show "Time's up" message if we've loaded the game state and timeLeft is actually 0 */}
+      {timeLeft <= 0 && !isSubmitted && !loading && (
         <div className="time-up-message">
           <p>Time's up! You didn't submit a drawing in time.</p>
         </div>

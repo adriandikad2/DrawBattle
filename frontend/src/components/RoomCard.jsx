@@ -2,16 +2,25 @@
 
 import { useNavigate } from "react-router-dom"
 import { useTheme } from "../contexts/ThemeContext"
+import { roomService } from "../services/api"
 
 function RoomCard({ room }) {
   const navigate = useNavigate()
   const { currentTheme } = useTheme()
 
   const isJoinable = room.status === "waiting" && room.players < room.maxPlayers
-
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!isJoinable) return
-    navigate(`/room/${room.id}`)
+    try {
+      // First join the room via API
+      await roomService.joinRoom(room.id)
+      // Then navigate to room page
+      navigate(`/room/${room.id}`)
+    } catch (error) {
+      console.error("Failed to join room:", error)
+      // Show error message using browser alert as we don't have access to toast here
+      alert(error.response?.data?.message || "Failed to join room")
+    }
   }
 
   return (

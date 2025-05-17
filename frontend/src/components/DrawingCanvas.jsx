@@ -60,15 +60,51 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
       ctx.strokeStyle = color
       ctx.lineWidth = brushSize
     }
-  }, [color, brushSize, ctx])
-
-  // Auto-submit when time runs out
+  }, [color, brushSize, ctx])  // Auto-submit when time runs out
   useEffect(() => {
-    if (timeLeft === 0 && !autoSubmitted && hasDrawn) {
-      handleSave()
-      setAutoSubmitted(true)
+    // Add a small delay before checking timeLeft to prevent false "time's up" at game start
+    const timer = setTimeout(() => {
+      if (timeLeft === 0 && !autoSubmitted && hasDrawn) {
+        console.log("Auto-submitting drawing as time ran out");
+        handleSave();
+        setAutoSubmitted(true);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [timeLeft, autoSubmitted, hasDrawn]);
+  
+  // Add a backup timer that will auto-submit shortly before the server ends the phase
+  // This ensures submission happens even if the user doesn't interact with the canvas
+  useEffect(() => {
+    // Only set backup timer if time is running and drawing hasn't been submitted yet
+    if (timeLeft > 3 && !autoSubmitted && !disabled) {
+      const backupTimer = setTimeout(() => {
+        if (!autoSubmitted) {
+          // Auto-submit whatever is on the canvas, even if it's blank
+          // Better to submit a blank drawing than none at all
+          console.log("Auto-submitting drawing as backup before time runs out");
+          
+          // If they haven't drawn anything, make a small mark so there's something to submit
+          if (!hasDrawn && ctx && canvasRef.current) {
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(canvasRef.current.width / 2, canvasRef.current.height / 2);
+            ctx.lineTo(canvasRef.current.width / 2 + 10, canvasRef.current.height / 2 + 10);
+            ctx.stroke();
+            ctx.closePath();
+            setHasDrawn(true);
+          }
+          
+          handleSave();
+          setAutoSubmitted(true);
+        }
+      }, (timeLeft - 2) * 1000); // Submit 2 seconds before server timer expires
+      
+      return () => clearTimeout(backupTimer);
     }
-  }, [timeLeft, autoSubmitted, hasDrawn])
+  }, [timeLeft, autoSubmitted, disabled, hasDrawn, ctx]);
 
   const startDrawing = (e) => {
     if (disabled) return
@@ -175,11 +211,12 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
           onTouchEnd={stopDrawing}
           className={`drawing-canvas ${disabled ? "disabled" : ""}`}
         />
-      </div>
-
-      {!disabled && (
+      </div>      {!disabled && (
         <div className="canvas-actions">
-          <button className="btn btn-primary" onClick={handleSave} disabled={!hasDrawn || timeLeft === 0}>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSave} 
+            disabled={!hasDrawn || (timeLeft === 0 && !autoSubmitted)}>
             Submit Drawing
           </button>
         </div>

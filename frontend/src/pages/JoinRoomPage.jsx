@@ -30,13 +30,25 @@ function JoinRoomPage() {
     }
   }
 
+  const handleBackToLobby = async () => {
+    try {
+      // Leave all rooms before navigating to lobby
+      await roomService.leaveAllRooms()
+      navigate("/lobby")
+    } catch (error) {
+      console.error("Failed to leave rooms", error)
+      // Navigate anyway
+      navigate("/lobby")
+    }
+  }
+
   return (
     <div className="join-room-page">
       <div className="page-header">
         <h1>Join a Room</h1>
-        <Link to="/lobby" className="btn btn-secondary">
+        <button onClick={handleBackToLobby} className="btn btn-secondary">
           Back to Lobby
-        </Link>
+        </button>
       </div>
 
       <div className="form-card">

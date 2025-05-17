@@ -6,6 +6,7 @@ import { AnimatePresence } from "framer-motion"
 import "react-toastify/dist/ReactToastify.css"
 import "./App.css"
 import "./styles/Theme.css"
+import "./styles/ToastStyles.css" // Custom toast styling
 
 // Pages
 import HomePage from "./pages/HomePage"
@@ -108,13 +109,17 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <ThemeProvider>
-          <div className="app-container">
+        <ThemeProvider>          <div className="app-container">
             <Navbar />
             <main className="main-content">
               <AnimatedRoutes />
             </main>
-            <ToastContainer position="bottom-right" />
+            <ToastContainer 
+              position="bottom-right" 
+              toastClassName="custom-toast" 
+              closeButton={true}
+              autoClose={3000}
+            />
           </div>
         </ThemeProvider>
       </Router>

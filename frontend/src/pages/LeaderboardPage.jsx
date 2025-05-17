@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { gameService } from "../services/api"
+import { gameService, roomService } from "../services/api"
 import { toast } from "react-toastify"
 
 function LeaderboardPage() {
@@ -36,6 +36,18 @@ function LeaderboardPage() {
 
     fetchLeaderboard()
   }, [roomId])
+
+  const handleReturnToLobby = async () => {
+    try {
+      // Leave all rooms before navigating to lobby
+      await roomService.leaveAllRooms()
+      navigate("/lobby")
+    } catch (error) {
+      console.error("Failed to leave rooms", error)
+      // Navigate anyway
+      navigate("/lobby")
+    }
+  }
 
   if (loading) {
     return <div className="loading">Loading results...</div>
@@ -126,9 +138,9 @@ function LeaderboardPage() {
       </div>
 
       <div className="leaderboard-actions">
-        <Link to="/lobby" className="btn btn-primary">
+        <button onClick={handleReturnToLobby} className="btn btn-primary">
           Return to Lobby
-        </Link>
+        </button>
       </div>
     </div>
   )

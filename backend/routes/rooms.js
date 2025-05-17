@@ -11,7 +11,7 @@ router.get("/", authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT r.id, r.name, r.host_id, r.max_players, r.status, r.is_private,
               u.username as host_name,
-              COUNT(rp.user_id) as player_count
+              COUNT(DISTINCT rp.user_id) as player_count
        FROM rooms r
        JOIN users u ON r.host_id = u.id
        LEFT JOIN room_players rp ON r.id = rp.room_id
@@ -56,14 +56,13 @@ router.post("/", authenticateToken, async (req, res) => {
     const roomResult = await pool.query(
       `INSERT INTO rooms (
         id, name, host_id, max_players, drawing_time, voting_time, rounds, is_private, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,      [
         roomCode,
         name,
         userId,
         maxPlayers || 6,
-        drawingTime || 60,
-        votingTime || 15,
+        drawingTime || 120,  // Changed from 60 to 120 seconds
+        votingTime || 20,    // Changed from 15 to 20 seconds
         rounds || 3,
         isPrivate || false,
         "waiting",
@@ -184,6 +183,49 @@ router.post("/:roomId/join", authenticateToken, async (req, res) => {
       return res.json({ message: "Already in room" })
     }
 
+    // Check if user is in any other rooms and remove them first
+    const otherRoomsResult = await pool.query("SELECT room_id FROM room_players WHERE user_id = $1 AND room_id != $2", [
+      userId, 
+      roomId
+    ])
+    
+    if (otherRoomsResult.rows.length > 0) {
+      // Remove user from all other rooms
+      for (const row of otherRoomsResult.rows) {
+        const otherRoomId = row.room_id;
+        
+        // For each room, check if the user is the host
+        const hostCheckResult = await pool.query("SELECT host_id FROM rooms WHERE id = $1", [otherRoomId]);
+        
+        if (hostCheckResult.rows.length > 0 && hostCheckResult.rows[0].host_id === userId) {
+          // Find new host
+          const newHostResult = await pool.query(
+            `SELECT user_id FROM room_players 
+             WHERE room_id = $1 AND user_id != $2
+             ORDER BY joined_at ASC 
+             LIMIT 1`,
+            [otherRoomId, userId]
+          );
+          
+          if (newHostResult.rows.length > 0) {
+            // Assign new host
+            await pool.query("UPDATE rooms SET host_id = $1 WHERE id = $2", 
+              [newHostResult.rows[0].user_id, otherRoomId]
+            );
+          } else {
+            // No other players, delete the room
+            await pool.query("DELETE FROM rooms WHERE id = $1", [otherRoomId]);
+          }
+        }
+      }
+      
+      // Remove user from all other rooms
+      await pool.query("DELETE FROM room_players WHERE user_id = $1 AND room_id != $2", [
+        userId, 
+        roomId
+      ]);
+    }
+
     // Add user to room
     await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)", [roomId, userId])
 
@@ -235,6 +277,58 @@ router.post("/:roomId/leave", authenticateToken, async (req, res) => {
     res.json({ message: "Left room successfully" })
   } catch (error) {
     console.error("Leave room error:", error)
+    res.status(500).json({ message: "Server error" })
+  }
+})
+
+// Leave all rooms (used when going to lobby to ensure user is not in multiple rooms)
+router.post("/leave-all", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    // Get all rooms where the user is a player
+    const roomsResult = await pool.query(
+      `SELECT rp.room_id, r.host_id
+       FROM room_players rp
+       JOIN rooms r ON rp.room_id = r.id
+       WHERE rp.user_id = $1`,
+      [userId]
+    )
+
+    if (roomsResult.rows.length === 0) {
+      return res.json({ message: "Not in any rooms" })
+    }
+
+    // Remove user from all rooms
+    await pool.query("DELETE FROM room_players WHERE user_id = $1", [userId])
+
+    // For each room where the user was the host, reassign host or delete room
+    for (const room of roomsResult.rows) {
+      if (room.host_id === userId) {
+        // Find another player to be the host
+        const newHostResult = await pool.query(
+          `SELECT user_id FROM room_players 
+           WHERE room_id = $1 
+           ORDER BY joined_at ASC 
+           LIMIT 1`,
+          [room.room_id]
+        )
+
+        if (newHostResult.rows.length > 0) {
+          // Assign new host
+          await pool.query("UPDATE rooms SET host_id = $1 WHERE id = $2", 
+            [newHostResult.rows[0].user_id, room.room_id]
+          )
+        } else {
+          // No players left, delete the room
+          await pool.query("DELETE FROM rooms WHERE id = $1", [room.room_id])
+        }
+      }
+    }
+
+    res.json({ message: "Left all rooms successfully" })
+  } catch (error) {
+    console.error("Leave all rooms error:", error)
     res.status(500).json({ message: "Server error" })
   }
 })
