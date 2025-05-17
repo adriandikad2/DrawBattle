@@ -2,11 +2,12 @@
 
 import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { useTheme } from "../contexts/ThemeContext"
 import { motion } from "framer-motion"
 import { useEffect, useRef } from "react"
-import { useInView } from 'react-intersection-observer'; // Added import
-import { FaPencilAlt, FaVoteYea, FaTrophy, FaPalette, FaUserFriends, FaChartLine } from 'react-icons/fa'; // Added import
-import './HomePage.css'; // Added import for CSS keyframes
+import { useInView } from 'react-intersection-observer'
+import { FaPencilAlt, FaVoteYea, FaTrophy, FaPalette, FaUserFriends, FaChartLine } from 'react-icons/fa'
+import './HomePage.css'
 
 // --- Canvas Drawing Logic ---
 const canvasColors = {
@@ -83,13 +84,14 @@ function drawPetal(ctx, element, time) {
 // Draw flower stem
 function drawStem(ctx, element, time) {
   const stemWobble = Math.sin(time * 2) * 5;
+  const stemLength = 150; // Fixed stem length
 
   ctx.beginPath();
   ctx.moveTo(element.x, element.y + 15);
   ctx.bezierCurveTo(
     element.x + stemWobble, element.y + 50,
     element.x - stemWobble, element.y + 100,
-    element.x, element.y + 150
+    element.x, element.y + stemLength
   );
   ctx.strokeStyle = element.color;
   ctx.lineWidth = 6;
@@ -97,18 +99,19 @@ function drawStem(ctx, element, time) {
 
   const leafTime = time * 3;
   const leafSize = 20 + Math.sin(leafTime) * 3;
+  const leafPosition = Math.min(stemLength - 60, 90); // Position leaf higher up on short stems
 
   ctx.beginPath();
-  ctx.moveTo(element.x, element.y + 90);
+  ctx.moveTo(element.x, element.y + leafPosition);
   ctx.bezierCurveTo(
-    element.x + leafSize, element.y + 75 + Math.sin(leafTime) * 5,
-    element.x + leafSize, element.y + 105 + Math.sin(leafTime) * 5,
-    element.x, element.y + 110
+    element.x + leafSize, element.y + (leafPosition - 15) + Math.sin(leafTime) * 5,
+    element.x + leafSize, element.y + (leafPosition + 15) + Math.sin(leafTime) * 5,
+    element.x, element.y + leafPosition + 20
   );
   ctx.bezierCurveTo(
-    element.x - leafSize / 2, element.y + 100 + Math.sin(leafTime) * 3,
-    element.x - leafSize / 2, element.y + 90 + Math.sin(leafTime) * 3,
-    element.x, element.y + 90
+    element.x - leafSize / 2, element.y + (leafPosition + 10) + Math.sin(leafTime) * 3,
+    element.x - leafSize / 2, element.y + leafPosition + Math.sin(leafTime) * 3,
+    element.x, element.y + leafPosition
   );
   ctx.fillStyle = element.color;
   ctx.fill();
@@ -133,10 +136,12 @@ function drawTheme(ctx, theme, time) {
 
 // Draw animated bee
 function drawBee(ctx, centerX, centerY, time) {
-  const beeOrbitRadius = 70;
+  // Make bee orbit radius responsive to canvas size
+  const beeOrbitRadius = Math.min(70, Math.min(centerX, centerY) / 2);
   const beeAngle = time * 0.8; // Speed of orbit
+  const verticalOffset = Math.min(80, centerY / 2); // Prevent bee from flying off canvas
   const beeX = centerX + Math.cos(beeAngle) * beeOrbitRadius;
-  const beeY = centerY - 80 + Math.sin(beeAngle) * beeOrbitRadius / 2; // Elliptical orbit, and offset to be above flower
+  const beeY = centerY - verticalOffset + Math.sin(beeAngle) * beeOrbitRadius / 2; // Elliptical orbit, and offset to be above flower
 
   const beeSize = 10;
   const wingFlap = Math.sin(time * 20) * 3; // Wing flap speed
@@ -165,7 +170,7 @@ function drawBee(ctx, centerX, centerY, time) {
   ctx.fill();
 
   // Wings (semi-transparent white/light blue)
-  ctx.fillStyle = 'rgba(173, 216, 230, 0.7)'; // Light blue with transparency
+  ctx.fillStyle = 'rgba(173,216,230,0.7)'; // Light blue with transparency
   
   // Left Wing
   ctx.beginPath();
@@ -182,12 +187,16 @@ function drawBee(ctx, centerX, centerY, time) {
 
 // Draw Colorful Orbs
 function drawColorfulOrbs(ctx, width, height, time) {
+  // Calculate positions relative to center to keep orbs balanced
+  const centerX = width / 2;
+  const centerY = height / 2;
+  
   const orbs = [
-    { id: 1, baseX: width * 0.2, baseY: height * 0.3, radius: 25, color: canvasColors.pink, speedX: 0.3, speedY: 0.2, phase: 0 },
-    { id: 2, baseX: width * 0.8, baseY: height * 0.4, radius: 30, color: canvasColors.blue, speedX: -0.2, speedY: 0.3, phase: Math.PI / 2 },
-    { id: 3, baseX: width * 0.5, baseY: height * 0.7, radius: 20, color: canvasColors.yellow, speedX: 0.25, speedY: -0.25, phase: Math.PI },
-    { id: 4, baseX: width * 0.3, baseY: height * 0.6, radius: 15, color: canvasColors.green, speedX: -0.15, speedY: -0.3, phase: Math.PI * 1.5 },
-    { id: 5, baseX: width * 0.7, baseY: height * 0.2, radius: 22, color: canvasColors.purple, speedX: 0.35, speedY: 0.15, phase: Math.PI * 0.8 },
+    { id: 1, baseX: centerX - (width * 0.3), baseY: centerY - (height * 0.2), radius: 25, color: canvasColors.pink, speedX: 0.3, speedY: 0.2, phase: 0 },
+    { id: 2, baseX: centerX + (width * 0.3), baseY: centerY - (height * 0.1), radius: 30, color: canvasColors.blue, speedX: -0.2, speedY: 0.3, phase: Math.PI / 2 },
+    { id: 3, baseX: centerX, baseY: centerY + (height * 0.2), radius: 20, color: canvasColors.yellow, speedX: 0.25, speedY: -0.25, phase: Math.PI },
+    { id: 4, baseX: centerX - (width * 0.2), baseY: centerY + (height * 0.1), radius: 15, color: canvasColors.green, speedX: -0.15, speedY: -0.3, phase: Math.PI * 1.5 },
+    { id: 5, baseX: centerX + (width * 0.2), baseY: centerY - (height * 0.3), radius: 22, color: canvasColors.purple, speedX: 0.35, speedY: 0.15, phase: Math.PI * 0.8 },
   ];
 
   orbs.forEach(orb => {
@@ -253,7 +262,6 @@ function HomePage() {
   }
   // Create keyframes for the gradient and animation effects
   // Removed useEffect for injecting style element, keyframes moved to HomePage.css
-
   // Canvas animation effect
   useEffect(() => {
     if (canvasRef.current) {
@@ -264,58 +272,181 @@ function HomePage() {
         console.error("Failed to get canvas rendering context");
         return;
       }
-
-      const width = canvas.width;
-      const height = canvas.height;
-
+      
       let animationFrameId;
       let time = 0;
-      let lastTimestamp = 0;
+      let lastTimestamp = 0;      // Function to start the animation
+      const startAnimation = () => {
+        // Get actual display dimensions
+        const displayWidth = canvas.clientWidth || canvas.width;
+        const displayHeight = canvas.clientHeight || canvas.height;
+        
+        // Use display dimensions for calculations, not the potentially scaled canvas dimensions
+        const centerX = displayWidth / 2;
+        const centerY = displayHeight / 2;
 
-      // Theme object for drawing
-      const drawingTheme = {
-        elements: [
-          { type: 'circle', x: width / 2, y: height / 2, radius: 20, color: canvasColors.red },
-          { type: 'petal', x: width / 2, y: height / 2, angle: 0, color: canvasColors.blue },
-          { type: 'petal', x: width / 2, y: height / 2, angle: 72, color: canvasColors.green },
-          { type: 'petal', x: width / 2, y: height / 2, angle: 144, color: canvasColors.yellow },
-          { type: 'petal', x: width / 2, y: height / 2, angle: 216, color: canvasColors.purple },
-          { type: 'petal', x: width / 2, y: height / 2, angle: 288, color: canvasColors.pink },
-          { type: 'stem', x: width / 2, y: height / 2, color: canvasColors.green }
-        ],
-        palette: Object.values(canvasColors)
-      };
+        // Theme object for drawing
+        const drawingTheme = {
+          elements: [
+            { type: 'circle', x: centerX, y: centerY, radius: 20, color: canvasColors.red },
+            { type: 'petal', x: centerX, y: centerY, angle: 0, color: canvasColors.blue },
+            { type: 'petal', x: centerX, y: centerY, angle: 72, color: canvasColors.green },
+            { type: 'petal', x: centerX, y: centerY, angle: 144, color: canvasColors.yellow },
+            { type: 'petal', x: centerX, y: centerY, angle: 216, color: canvasColors.purple },
+            { type: 'petal', x: centerX, y: centerY, angle: 288, color: canvasColors.pink },
+            { type: 'stem', x: centerX, y: centerY, color: canvasColors.green }
+          ],
+          palette: Object.values(canvasColors)
+        };        const renderLoop = (timestamp) => {
+          const deltaTime = timestamp - lastTimestamp;
+          lastTimestamp = timestamp;
+          time += deltaTime / 1000; 
 
-      const renderLoop = (timestamp) => {
-        const deltaTime = timestamp - lastTimestamp;
-        lastTimestamp = timestamp;
-        time += deltaTime / 1000; 
+          // Get current display dimensions which may change during animation
+          const width = canvas.clientWidth || canvas.width;
+          const height = canvas.clientHeight || canvas.height;
+          const centerX = width / 2;
+          const centerY = height / 2;
 
-        ctx.clearRect(0, 0, width, height);
-        drawGrid(ctx, width, height);
-        // drawClouds(ctx, width, time); // Removed call to drawClouds
-        drawColorfulOrbs(ctx, width, height, time); // Added call to drawColorfulOrbs
-        drawTheme(ctx, drawingTheme, time);
-        // drawPalette(ctx, drawingTheme.palette, width, height, time); // Removed call to drawPalette
-        // drawGrass(ctx, width, height, time); // Removed call to drawGrass
-        drawBee(ctx, width / 2, height / 2, time);
+          ctx.clearRect(0, 0, width, height);
+          drawGrid(ctx, width, height);
+          drawColorfulOrbs(ctx, width, height, time);
+          drawTheme(ctx, drawingTheme, time);
+          drawBee(ctx, centerX, centerY, time);
+
+          animationFrameId = requestAnimationFrame(renderLoop);
+        };
 
         animationFrameId = requestAnimationFrame(renderLoop);
       };
-
-      animationFrameId = requestAnimationFrame(renderLoop);
-
+      
+      // Set canvas dimensions based on container size
+      const updateCanvasSize = () => {
+        const container = canvas.parentElement;
+        if (container) {
+          // Get container dimensions
+          const containerWidth = container.clientWidth;
+          const containerHeight = container.clientHeight;
+          
+          // Clear any existing transformations
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          
+          // Set display size in CSS pixels (controls visual size)
+          canvas.style.width = containerWidth + 'px';
+          canvas.style.height = containerHeight + 'px';
+          
+          // Get device pixel ratio for high DPI displays
+          const dpr = window.devicePixelRatio || 1;
+          
+          // Set actual canvas dimensions accounting for device pixel ratio
+          canvas.width = Math.floor(containerWidth * dpr);
+          canvas.height = Math.floor(containerHeight * dpr);
+          
+          // Scale drawing operations by the device pixel ratio
+          ctx.scale(dpr, dpr);
+          
+          // Redraw everything when size changes
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+          }
+          startAnimation();
+        }
+      };
+      
+      // Handle mobile touch events for better interaction
+      const handleTouchStart = (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+      };
+      
+      const handleTouchMove = (e) => {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+      };
+      
+      // Add touch event listeners for mobile devices
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      
+      // Initial size setup
+      updateCanvasSize();
+      
+      // Listen for window resize and orientation change
+      window.addEventListener('resize', updateCanvasSize);
+      window.addEventListener('orientationchange', updateCanvasSize);
+      
       return () => {
-        cancelAnimationFrame(animationFrameId);
+        window.removeEventListener('resize', updateCanvasSize);
+        window.removeEventListener('orientationchange', updateCanvasSize);
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
       };
     }
-  }, []);const styles = {
+  }, []);
+  // Add CSS rules for different screen sizes
+  useEffect(() => {
+    // Helper function to create style element
+    const createStyleElement = () => {
+      const styleEl = document.createElement('style');
+      styleEl.id = 'responsive-styles';
+      document.head.appendChild(styleEl);
+      return styleEl;
+    };
+
+    // Get existing style element or create a new one
+    let styleEl = document.getElementById('responsive-styles');
+    if (!styleEl) {
+      styleEl = createStyleElement();
+    }
+
+    // Define responsive styles for different screen sizes
+    styleEl.textContent = `
+      /* Additional responsive styles for small devices (under 480px) */
+      @media (max-width: 480px) {
+        .btn {
+          padding: 0.5rem 1.25rem !important;
+          font-size: 0.95rem !important;
+        }
+
+        .btn-lg {
+          padding: 0.75rem 1.5rem !important;
+          font-size: 1rem !important;
+        }
+      }
+
+      /* Landscape orientation on mobile */
+      @media (max-width: 768px) and (orientation: landscape) {
+        section {
+          padding-top: 1.5rem !important;
+          padding-bottom: 1.5rem !important;
+        }
+      }
+
+      /* Medium-sized tablets */
+      @media (min-width: 769px) and (max-width: 1024px) {
+        .hero-title {
+          font-size: 3rem !important;
+        }
+      }
+    `;
+
+    // Cleanup function to remove style element when component unmounts
+    return () => {
+      if (styleEl && document.head.contains(styleEl)) {
+        document.head.removeChild(styleEl);
+      }
+    };
+  }, []);
+  const styles = {
     homePage: {
       position: 'relative',
       overflow: 'hidden',
       paddingBottom: '4rem',
-    },
-    hero: {
+      '@media (max-width: 768px)': {
+        paddingBottom: '2rem',
+      },
+    },    hero: {
       display: 'flex',
       flexDirection: 'row',
       alignItems: 'center',
@@ -323,24 +454,36 @@ function HomePage() {
       position: 'relative',
       minHeight: '80vh',
       '@media (max-width: 768px)': {
-        flexDirection: 'column',
-        padding: '3rem 1rem',
+        flexDirection: 'column-reverse',
+        padding: '1rem 1rem 2rem',
+        minHeight: 'auto',
+        gap: '1.5rem',
       },
-    },
-    heroContent: {
+    },    heroContent: {
       flex: 1,
       maxWidth: '600px',
       position: 'relative',
       zIndex: 2,
-    },
-    heroTitle: {
+      '@media (max-width: 768px)': {
+        width: '100%',
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: '1rem',
+        padding: '0 0.75rem', // Add some horizontal padding
+      },
+    },    heroTitle: {
       fontSize: '3.5rem',
       fontWeight: '800',
       lineHeight: '1.1',
       marginBottom: '1.5rem',
       position: 'relative',
       '@media (max-width: 768px)': {
-        fontSize: '2.5rem',
+        fontSize: '2.75rem',
+        textAlign: 'center',
+        marginTop: '0',
+        marginBottom: '1rem',
       },
     },
     gradientHeading: {
@@ -351,23 +494,39 @@ function HomePage() {
       backgroundClip: 'text',
       color: 'transparent',
       animation: 'gradientFlow 8s ease infinite',
-    },
-    heroSubtitle: {
+    },    heroSubtitle: {
       fontSize: '1.25rem',
       marginBottom: '2rem',
       color: 'rgba(31, 41, 55, 0.8)',
       lineHeight: '1.6',
-    },
-    heroActions: {
+      '@media (max-width: 768px)': {
+        fontSize: '1.1rem',
+        textAlign: 'center',
+        marginBottom: '1.25rem',
+        maxWidth: '95%', // Prevent text from touching edges
+        margin: '0 auto 1.25rem',
+      },
+    },    heroActions: {
       display: 'flex',
       gap: '1rem',
       marginTop: '2rem',
+      '@media (max-width: 768px)': {
+        justifyContent: 'center',
+        marginBottom: '0.5rem',
+        marginTop: '0.75rem',
+        flexWrap: 'wrap',
+        gap: '1rem',
+      },
     },
     heroImage: {
       flex: 1,
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      '@media (max-width: 768px)': {
+        width: '100%',
+        marginBottom: '0.5rem',
+      },
     },    canvasContainer: {
       width: '100%',
       maxWidth: '450px', 
@@ -378,15 +537,24 @@ function HomePage() {
       backgroundColor: 'white',
       boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
       border: '1px solid var(--border-color)',
-      // animation: 'floatAnimation 3s ease-in-out infinite', // Removed animation
       transformStyle: 'preserve-3d',
       perspective: '1000px',
+      margin: '0 auto', // Center canvas
+      '@media (max-width: 768px)': {
+        height: '300px', // Increased height on mobile
+        maxWidth: '100%', // Full width of parent container
+        width: '95%', // Add minimal padding on sides
+        marginBottom: '1rem', // Add space between canvas and text
+        marginTop: '1rem', // Add space at the top
+        boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)', // More prominent shadow
+      },
     },
     canvas: {
       width: '100%',
       height: '100%', 
       display: 'block',
       borderRadius: '0.75rem',
+      touchAction: 'none', // Prevent default touch actions for better mobile experience
     },
     howItWorks: {
       padding: '4rem 2rem',
@@ -394,6 +562,10 @@ function HomePage() {
       borderRadius: '1rem',
       margin: '2rem auto',
       maxWidth: '1100px',
+      '@media (max-width: 768px)': {
+        padding: '3rem 1rem',
+        margin: '1rem 0.5rem',
+      },
     },
     sectionTitle: {
       textAlign: 'center',
@@ -402,6 +574,10 @@ function HomePage() {
       marginBottom: '2.5rem',
       color: 'var(--text-color)',
       position: 'relative',
+      '@media (max-width: 768px)': {
+        fontSize: '1.8rem',
+        marginBottom: '2rem',
+      },
     },
     stepsContainer: {
       display: 'flex',
@@ -410,6 +586,11 @@ function HomePage() {
       maxWidth: '900px',
       margin: '0 auto',
       position: 'relative',
+      '@media (max-width: 768px)': {
+        flexDirection: 'column',
+        gap: '2rem',
+        paddingTop: '1rem',
+      },
     },
     step: {
       flex: 1,
@@ -420,6 +601,12 @@ function HomePage() {
       padding: '0 1rem',
       position: 'relative',
       zIndex: 1,
+      '@media (max-width: 768px)': {
+        maxWidth: '100%',
+        padding: '0 0.5rem',
+        marginBottom: '1.5rem',
+        width: '90%',
+      },
     },
     stepIcon: {
       width: '70px',
@@ -457,17 +644,30 @@ function HomePage() {
       width: '100%',
       left: '0',
       zIndex: 0,
+      '@media (max-width: 768px)': {
+        display: 'none', // Hide connecting lines on mobile since steps are stacked vertically
+      },
     },
     features: {
       padding: '5rem 2rem',
       maxWidth: '1200px',
       margin: '0 auto',
+      '@media (max-width: 768px)': {
+        padding: '3rem 1rem',
+      },
     },
     featureGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: '2rem',
       marginTop: '3rem',
+      '@media (max-width: 768px)': {
+        gridTemplateColumns: '1fr', // Single column on mobile
+        gap: '1.5rem',
+        marginTop: '2rem',
+        width: '95%', // Add some side padding
+        margin: '2rem auto 0',
+      },
     },
     feature: {
       backgroundColor: 'white',
@@ -477,6 +677,9 @@ function HomePage() {
       border: '1px solid var(--border-color)',
       position: 'relative',
       overflow: 'hidden',
+      '@media (max-width: 768px)': {
+        padding: '1.25rem',
+      },
     },
     featureTopBar: {
       position: 'absolute',
@@ -505,25 +708,20 @@ function HomePage() {
       color: 'rgba(31, 41, 55, 0.8)',
       fontSize: '0.9rem',
       lineHeight: '1.6',
-    },    /* CTA section styles removed */
-    // Responsive styles
-    '@media (max-width: 768px)': {
-      stepsContainer: {
-        flexDirection: 'column',
-        gap: '3rem',
-      },
-      stepsConnection: {
-        display: 'none',
-      },
     },
     credits: {
       padding: '3rem 2rem',
       marginTop: '4rem',
-      backgroundColor: 'rgba(243, 244, 246, 0.7)', // Consistent with howItWorks section
-      borderRadius: '1rem', // Consistent with howItWorks section
-      maxWidth: '900px', // Max width for better readability
-      margin: '4rem auto 2rem auto', // Centering and spacing
+      backgroundColor: 'rgba(243, 244, 246, 0.7)',
+      borderRadius: '1rem',
+      maxWidth: '900px',
+      margin: '4rem auto 2rem auto',
       textAlign: 'center',
+      '@media (max-width: 768px)': {
+        padding: '2rem 1.5rem',
+        margin: '3rem 0.5rem 2rem',
+        borderRadius: '0.75rem',
+      },
     },
     creditsTitle: {
       fontSize: '2rem', // Slightly larger title
@@ -532,11 +730,15 @@ function HomePage() {
       color: 'var(--text-color)', // Consistent with sectionTitle
       position: 'relative',
     },
-    creditsGrid: { // Changed from creditsList to a grid for better layout with images
+    creditsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', // Responsive grid
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
       gap: '2rem',
       justifyContent: 'center',
+      '@media (max-width: 768px)': {
+        gridTemplateColumns: '1fr',
+        gap: '1.5rem',
+      },
     },
     creditItem: {
       backgroundColor: 'white',
@@ -645,10 +847,8 @@ function HomePage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <motion.div 
+        >          <motion.div 
             style={styles.canvasContainer} 
-            // whileHover={{ scale: 1.03, boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)', rotateY: '5deg' }} // Removed hover effect
             transition={{ duration: 0.3 }}
           >
             <canvas 
@@ -657,33 +857,6 @@ function HomePage() {
               width={450} 
               height={350} 
             />
-            
-            {/* Floating drawing tools - REMOVED */}
-            {/* <motion.div 
-              style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                fontSize: '24px',
-                animation: 'floatAnimation 3s ease-in-out infinite',
-                animationDelay: '0.5s',
-              }}
-            >
-              🖌️
-            </motion.div>
-            
-            <motion.div 
-              style={{
-                position: 'absolute',
-                bottom: '30px',
-                right: '30px',
-                fontSize: '24px',
-                animation: 'floatAnimation 2.5s ease-in-out infinite',
-                animationDelay: '1s',
-              }}
-            >
-              ✏️
-            </motion.div> */}
           </motion.div>
         </motion.div>
       </section>

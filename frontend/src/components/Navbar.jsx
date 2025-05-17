@@ -2,9 +2,11 @@
 
 import { useNavigate, Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import { useTheme } from "../contexts/ThemeContext"
 
 function Navbar() {
   const { currentUser, logout } = useAuth()
+  const { currentTheme } = useTheme()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -17,8 +19,9 @@ function Navbar() {
   }
 
   return (
-    <header className="navbar">
-      <div className="navbar-container">        <Link to="/" className="navbar-logo">
+    <header className={`navbar ${currentTheme}`}>
+      <div className="navbar-container">        
+        <Link to="/" className="navbar-logo">
           <span className="logo-icon">🎨</span>
           <h1>DrawBattle</h1>
         </Link>
@@ -51,5 +54,6 @@ function Navbar() {
     </header>
   )
 }
+
 
 export default Navbar

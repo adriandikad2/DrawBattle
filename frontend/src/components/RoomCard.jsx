@@ -1,9 +1,11 @@
 "use client"
 
 import { useNavigate } from "react-router-dom"
+import { useTheme } from "../contexts/ThemeContext"
 
 function RoomCard({ room }) {
   const navigate = useNavigate()
+  const { currentTheme } = useTheme()
 
   const isJoinable = room.status === "waiting" && room.players < room.maxPlayers
 
@@ -13,8 +15,8 @@ function RoomCard({ room }) {
   }
 
   return (
-    <div className={`room-card ${room.status}`}>
-      <h3>{room.name}</h3>
+    <div className={`room-card ${room.status} themed-card`}>
+      <h3 className="themed-subtitle">{room.name}</h3>
       <div className="room-info">
         <p>Host: {room.host}</p>
         <p>
@@ -22,7 +24,7 @@ function RoomCard({ room }) {
         </p>
         <p className="room-status">
           Status:
-          <span className={`status-badge ${room.status}`}>
+          <span className={`status-badge ${room.status} themed-badge`}>
             {room.status === "waiting"
               ? "Waiting for players"
               : room.status === "playing"
@@ -31,7 +33,11 @@ function RoomCard({ room }) {
           </span>
         </p>
       </div>
-      <button className="btn btn-primary" onClick={handleJoinRoom} disabled={!isJoinable}>
+      <button 
+        className={isJoinable ? "themed-btn" : "btn btn-secondary"} 
+        onClick={handleJoinRoom} 
+        disabled={!isJoinable}
+      >
         {isJoinable
           ? "Join Room"
           : room.status === "playing"
