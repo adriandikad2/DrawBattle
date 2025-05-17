@@ -30,41 +30,64 @@ function LoginPage() {
       setLoading(false)
     }
   }
-
   return (
     <div className="auth-page">
+      {/* Decorative elements */}
+      <div className="decorative-element pencil">✏️</div>
+      <div className="decorative-element brush">🖌️</div>
+      <div className="decorative-element palette">🎨</div>
+      
       <div className="auth-card">
-        <h1 className="auth-title">Login to DrawBattle</h1>
+        <h1 className="auth-title">Welcome Back, Artist!</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">
+              <span className="input-icon">👤</span> Username
+            </label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
+              placeholder="Your artist name"
               required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">
+              <span className="input-icon">🔒</span> Password
+            </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              placeholder="Your secret passcode"
               required
             />
           </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? 
+              <><span className="spinner"></span> Sharpening Pencils...</> : 
+              <>🎭 Enter the Arena</>
+            }
           </button>
         </form>
         <p className="auth-link">
-          Don't have an account? <Link to="/register">Register</Link>
+          New to the battle? <Link to="/register">Create an Account</Link>
         </p>
+        
+        <div className="auth-decoration">
+          <div className="color-palette">
+            <span style={{background: "var(--red-crayon)"}}></span>
+            <span style={{background: "var(--blue-crayon)"}}></span>
+            <span style={{background: "var(--green-crayon)"}}></span>
+            <span style={{background: "var(--yellow-crayon)"}}></span>
+            <span style={{background: "var(--purple-crayon)"}}></span>
+          </div>
+        </div>
       </div>
     </div>
   )

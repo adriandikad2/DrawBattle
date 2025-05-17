@@ -39,48 +39,65 @@ function RegisterPage() {
 
   return (
     <div className="auth-page">
+      {/* Decorative elements */}
+      <div className="decorative-element pencil">✏️</div>
+      <div className="decorative-element brush">🖌️</div>
+      <div className="decorative-element palette">🎨</div>
+      
       <div className="auth-card">
-        <h1 className="auth-title">Create an Account</h1>
+        <h1 className="auth-title">Join the Battle!</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">
+              <span className="input-icon">👤</span> Username
+            </label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
+              placeholder="Create your artist name"
               required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">
+              <span className="input-icon">🔒</span> Password
+            </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
+              placeholder="Your secret passcode"
               required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">
+              <span className="input-icon">✓</span> Confirm Password
+            </label>
             <input
               type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
+              placeholder="Confirm your passcode"
               required
             />
           </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? "Registering..." : "Register"}
+            {loading ? 
+              <><span className="spinner"></span> Creating Masterpiece...</> : 
+              <>✨ Start Your Artistic Journey</>
+            }
           </button>
         </form>
         <p className="auth-link">
-          Already have an account? <Link to="/login">Login</Link>
+          Already a battle artist? <Link to="/login">Login</Link>
         </p>
       </div>
     </div>

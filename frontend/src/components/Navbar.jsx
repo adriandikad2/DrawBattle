@@ -18,8 +18,7 @@ function Navbar() {
 
   return (
     <header className="navbar">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo">
+      <div className="navbar-container">        <Link to="/" className="navbar-logo">
           <span className="logo-icon">🎨</span>
           <h1>DrawBattle</h1>
         </Link>

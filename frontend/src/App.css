@@ -1,5 +1,6 @@
-/* Base styles */
+/* Base styles with enriched colors for Draw Battle theme */
 :root {
+  /* Main colors */
   --primary-color: #6366f1;
   --primary-hover: #4f46e5;
   --secondary-color: #f59e0b;
@@ -7,14 +8,31 @@
   --background-color: #f9fafb;
   --card-background: #ffffff;
   --border-color: #e5e7eb;
+  
+  /* Status colors */
   --success-color: #10b981;
   --error-color: #ef4444;
   --waiting-color: #f59e0b;
   --playing-color: #10b981;
   --finished-color: #6366f1;
+  
+  /* Drawing theme colors */
+  --red-crayon: #f43f5e;
+  --blue-crayon: #3b82f6;
+  --green-crayon: #22c55e;
+  --yellow-crayon: #eab308;
+  --purple-crayon: #8b5cf6;
+  --pink-crayon: #ec4899;
+  --orange-crayon: #f97316;
+  --teal-crayon: #14b8a6;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #6366f1, #4f46e5);
+  --gradient-secondary: linear-gradient(135deg, #f59e0b, #d97706);
+  --gradient-palette: linear-gradient(90deg, #f43f5e, #ec4899, #8b5cf6, #3b82f6, #14b8a6, #22c55e, #eab308, #f97316);
 }
 
-body {
+body, html {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
     "Helvetica Neue", sans-serif;
   color: var(--text-color);
@@ -22,12 +40,17 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.5;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
 }
 
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  position: relative;
 }
 
 .main-content {
@@ -73,6 +96,8 @@ body {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--background-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .btn-block {
@@ -87,6 +112,7 @@ body {
 .btn-sm {
   padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
+  transition: all 0.3s ease;
 }
 
 .btn-icon {
@@ -125,6 +151,18 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
   font-size: 1rem;
+  background-color: #f3f4f6; /* Light gray background */
+  color: var(--text-color);
+}
+
+/* Fix for autofill background and text color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #f3f4f6 inset !important;
+  -webkit-text-fill-color: var(--text-color) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-row {
@@ -152,11 +190,14 @@ body {
   margin-top: 1.5rem;
 }
 
-/* Navbar styles */
+/* Navbar styles with enhanced animations */
 .navbar {
   background-color: var(--card-background);
   border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 1rem;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .navbar-container {
@@ -168,21 +209,66 @@ body {
   width: 100%;
 }
 
+/* Animated logo styles */
 .navbar-logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
   color: var(--text-color);
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
 }
 
 .navbar-logo h1 {
   font-size: 1.5rem;
   margin: 0;
+  background: linear-gradient(45deg, var(--primary-color), var(--purple-crayon), var(--blue-crayon), var(--primary-color));
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: gradientFlow 8s ease infinite;
+  text-shadow: 0 0 5px rgba(99, 102, 241, 0.1);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .logo-icon {
   font-size: 1.5rem;
+  animation: spinPalette 10s linear infinite;
+  transform-origin: center;
+  display: inline-block;
+}
+
+@keyframes spinPalette {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.navbar-logo:hover .logo-icon {
+  animation: spinPaletteFast 1.5s ease infinite;
+}
+
+@keyframes spinPaletteFast {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-15deg); }
+  100% { transform: rotate(0deg); }
 }
 
 .navbar-links {
@@ -191,14 +277,34 @@ body {
   gap: 1.5rem;
 }
 
+/* Enhanced nav links with underline animation */
 .nav-link {
   color: var(--text-color);
   text-decoration: none;
   font-weight: 500;
+  position: relative;
+  padding: 0.25rem 0;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  transition: width 0.3s ease;
+  border-radius: 10px;
 }
 
 .nav-link:hover {
   color: var(--primary-color);
+}
+
+.nav-link:hover::after {
+  width: 100%;
 }
 
 .user-menu {
@@ -208,45 +314,333 @@ body {
 }
 
 .username {
-  font-weight: 500;
+  font-weight: 600;
+  background: linear-gradient(120deg, var(--primary-color), var(--purple-crayon));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  position: relative;
+  padding-bottom: 2px;
 }
 
-/* Auth pages */
+.username::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--primary-color), transparent);
+}
+
+/* Auth pages with creative design for Draw Battle theme */
 .auth-page {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 4rem);
-  padding: 1rem;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(120deg, #f0f4ff, #e6f0ff);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Decorative elements for Draw Battle theme */
+.auth-page::before {
+  content: "🎨";
+  position: absolute;
+  font-size: 12rem;
+  opacity: 0.04;
+  top: -2rem;
+  left: 10%;
+  transform: rotate(-15deg);
+}
+
+.auth-page::after {
+  content: "🖌️";
+  position: absolute;
+  font-size: 12rem;
+  opacity: 0.04;
+  bottom: -2rem;
+  right: 10%;
+  transform: rotate(15deg);
 }
 
 .auth-card {
   background-color: var(--card-background);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 
+    0 10px 15px -3px rgba(99, 102, 241, 0.1),
+    0 4px 6px -2px rgba(99, 102, 241, 0.05),
+    0 0 0 2px rgba(99, 102, 241, 0.03);
+  padding: 2.5rem;
   width: 100%;
-  max-width: 24rem;
+  max-width: 26rem;
+  position: relative;
+  z-index: 5;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 20px 25px -5px rgba(99, 102, 241, 0.15),
+    0 10px 10px -5px rgba(99, 102, 241, 0.1),
+    0 0 0 3px rgba(99, 102, 241, 0.05);
 }
 
 .auth-title {
   text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
   color: var(--primary-color);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.8rem;
+  position: relative;
+  padding-bottom: 0.8rem;
+}
+
+.auth-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 2px;
 }
 
 .auth-link {
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  font-weight: 500;
 }
 
 .auth-link a {
   color: var(--primary-color);
   text-decoration: none;
+  position: relative;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.auth-link a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--secondary-color);
+  transition: width 0.3s ease;
 }
 
 .auth-link a:hover {
-  text-decoration: underline;
+  color: var(--secondary-color);
+}
+
+.auth-link a:hover::after {
+  width: 100%;
+}
+
+/* Auth form styling */
+.auth-card .form-group label {
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.auth-card .form-group:focus-within label {
+  color: var(--primary-color);
+}
+
+.auth-card .form-group input {
+  border: 2px solid #e5e7eb;
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.auth-card .form-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  outline: none;
+}
+
+.auth-card .form-group input:hover {
+  border-color: #d1d5db;
+}
+
+/* Creative button styling for auth pages */
+.auth-card .btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+  border: none;
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card .btn-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0)
+  );
+  transition: all 0.6s ease;
+}
+
+.auth-card .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px -1px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #4f46e5, var(--primary-color));
+}
+
+.auth-card .btn-primary:hover::before {
+  left: 100%;
+}
+
+.auth-card .btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px -1px rgba(99, 102, 241, 0.3);
+}
+
+/* Animated decorative elements for auth pages */
+@keyframes floatAnimation {
+  0% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-10px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+.decorative-element {
+  position: absolute;
+  opacity: 0.07;
+  filter: blur(1px);
+  z-index: 0;
+  animation: floatAnimation 6s ease-in-out infinite;
+}
+
+.auth-page .pencil {
+  top: 15%;
+  right: 15%;
+  font-size: 5rem;
+  animation-delay: 1s;
+  content: "✏️";
+}
+
+.auth-page .brush {
+  bottom: 20%;
+  left: 10%;
+  font-size: 4rem;
+  animation-delay: 2s;
+  content: "🖌️";
+}
+
+.auth-page .palette {
+  top: 25%;
+  left: 20%;
+  font-size: 4.5rem;
+  animation-delay: 3s;
+  content: "🎨";
+}
+
+/* Additional creative elements for auth pages */
+.input-icon {
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Loading spinner for auth buttons */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+/* Color palette decoration */
+.auth-decoration {
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  border-top: 1px dashed rgba(99, 102, 241, 0.2);
+}
+
+.color-palette {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.color-palette span {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.color-palette span:hover {
+  transform: scale(1.2) translateY(-3px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Toast notification customization */
+.Toastify__toast {
+  border-radius: 8px !important;
+}
+
+.Toastify__toast--success {
+  background: linear-gradient(45deg, var(--success-color), #059669) !important;
+}
+
+.Toastify__toast--error {
+  background: linear-gradient(45deg, var(--error-color), #dc2626) !important;
+}
+
+/* Focus management for accessibility */
+.auth-card .form-group input:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+/* Placeholder styling */
+.auth-card .form-group input::placeholder {
+  color: #9ca3af;
+  opacity: 0.7;
 }
 
 /* Home page */
