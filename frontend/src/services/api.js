@@ -59,6 +59,8 @@ export const gameService = {
     })
   },
 
+
+  getUserDrawings: (userId) => api.get(`/game/user/${userId}/drawings`),
   getDrawingToVote: (roomId) => api.get(`/game/${roomId}/drawing-to-vote`),
 
   submitVote: (drawingId, rating) => api.post(`/game/vote`, { drawingId, rating }),
