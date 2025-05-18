@@ -27,7 +27,7 @@ CREATE TABLE rooms (
 
 -- Create room_players table (many-to-many relationship)
 CREATE TABLE room_players (
-    room_id VARCHAR(6) REFERENCES rooms(id) ON DELETE CASCADE,
+    room_id VARCHAR(6) REFERENCES rooms(id),
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (room_id, user_id)

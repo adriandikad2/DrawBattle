@@ -73,9 +73,9 @@ function LoginPage() {
       <AuthCanvas />
       
       {/* Decorative elements with hover animations */}
-      <motion.div className="decorative-element pencil" variants={decorativeVariants} whileHover="hover">✏️</motion.div>
-      <motion.div className="decorative-element brush" variants={decorativeVariants} whileHover="hover">🖌️</motion.div>
-      <motion.div className="decorative-element palette" variants={decorativeVariants} whileHover="hover">🎨</motion.div>
+      <motion.div className="decorative-element pencil select-none pointer-events-none" variants={decorativeVariants} whileHover="hover">✏️</motion.div>
+      <motion.div className="decorative-element brush select-none pointer-events-none" variants={decorativeVariants} whileHover="hover">🖌️</motion.div>
+      <motion.div className="decorative-element palette select-none pointer-events-none" variants={decorativeVariants} whileHover="hover">🎨</motion.div>
         <motion.div 
         className="auth-card"
         variants={contentVariants}

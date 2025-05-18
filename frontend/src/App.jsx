@@ -19,6 +19,7 @@ import WaitingRoomPage from "./pages/WaitingRoomPage"
 import DrawingPage from "./pages/DrawingPage"
 import VotingPage from "./pages/VotingPage"
 import LeaderboardPage from "./pages/LeaderboardPage"
+import UserProfilePage from "./pages/UserProfilePage"
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute"
@@ -96,6 +97,15 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
               </ProtectedRoute>
             }
           />

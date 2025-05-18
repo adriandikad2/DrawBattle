@@ -13,11 +13,15 @@ router.get("/user/:userId/drawings", authenticateToken, async (req, res) => {
     if (parseInt(userId) !== req.user.id) {
       return res.status(403).json({ message: "Forbidden" });
     }
+    // Get drawings with average rating
     const drawingsResult = await pool.query(
-      `SELECT d.id, d.room_id, d.round_number, d.prompt_id, d.image_url, d.created_at, p.text as prompt_text
+      `SELECT d.id, d.room_id, d.round_number, d.prompt_id, d.image_url, d.created_at, p.text as prompt_text,
+              AVG(s.rating) as average_rating
        FROM drawings d
        LEFT JOIN prompts p ON d.prompt_id = p.id
+       LEFT JOIN stars s ON d.id = s.drawing_id
        WHERE d.artist_id = $1
+       GROUP BY d.id, p.text
        ORDER BY d.created_at DESC`,
       [userId]
     );

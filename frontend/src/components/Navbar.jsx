@@ -22,8 +22,8 @@ function Navbar() {
     <header className={`navbar ${currentTheme}`}>
       <div className="navbar-container">        
         <Link to="/" className="navbar-logo">
-          <span className="logo-icon">🎨</span>
-          <h1>DrawBattle</h1>
+          <span className="logo-icon select-none pointer-events-none">🎨</span>
+          <h1 className="select-none pointer-events-none">DrawBattle</h1>
         </Link>
 
         <nav className="navbar-links">
@@ -31,6 +31,9 @@ function Navbar() {
             <>
               <Link to="/lobby" className="nav-link">
                 Lobby
+              </Link>
+              <Link to="/profile" className="nav-link">
+                Profile
               </Link>
               <div className="user-menu">
                 <span className="username">{currentUser.username}</span>

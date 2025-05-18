@@ -225,7 +225,7 @@ router.post("/:roomId/join", authenticateToken, async (req, res) => {
             );
             console.log(`[DEBUG] Assigned new host ${newHostResult.rows[0].user_id} for room ${otherRoomId}`);
           } else {
-            // No other players, delete the room
+            // No other players, delete the room (drawings are NOT deleted)
             await pool.query("DELETE FROM rooms WHERE id = $1", [otherRoomId]);
             console.log(`[DEBUG] Deleted empty room ${otherRoomId}`);
           }
@@ -291,7 +291,7 @@ router.post("/:roomId/leave", authenticateToken, async (req, res) => {
         // Assign new host
         await pool.query("UPDATE rooms SET host_id = $1 WHERE id = $2", [newHostResult.rows[0].user_id, roomId])
       } else {
-        // No players left, delete the room
+        // No players left, delete the room (drawings are NOT deleted)
         await pool.query("DELETE FROM rooms WHERE id = $1", [roomId])
       }
     }
@@ -342,7 +342,7 @@ router.post("/leave-all", authenticateToken, async (req, res) => {
             [newHostResult.rows[0].user_id, room.room_id]
           )
         } else {
-          // No players left, delete the room
+          // No players left, delete the room (drawings are NOT deleted)
           await pool.query("DELETE FROM rooms WHERE id = $1", [room.room_id])
         }
       }

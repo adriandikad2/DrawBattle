@@ -72,11 +72,6 @@ function DrawingPage() {
 
         // Update state without showing loading indicator
         setPrompt(response.data.prompt)
-        
-        // Only update timeLeft if:
-        // 1. The new value is significantly different (>5s difference)
-        // 2. The server time is higher than our current time (server refreshed the timer)
-        // 3. The current timer is near zero (to refresh if server extended time)
         if (
           Math.abs(response.data.timeLeft - timeLeft) > 5 || 
           response.data.timeLeft > timeLeft ||
