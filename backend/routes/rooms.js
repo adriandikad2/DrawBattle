@@ -52,19 +52,26 @@ router.post("/", authenticateToken, async (req, res) => {
     // Generate a unique room code (6 characters)
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase()
 
-    // Create room
+    // Use explicit fallback only if undefined/null, not if 0
+    const safeMaxPlayers = typeof maxPlayers === 'number' && maxPlayers > 0 ? maxPlayers : 6;
+    const safeDrawingTime = typeof drawingTime === 'number' && drawingTime > 0 ? drawingTime : 120;
+    const safeVotingTime = typeof votingTime === 'number' && votingTime > 0 ? votingTime : 20;
+    const safeRounds = typeof rounds === 'number' && rounds > 0 ? rounds : 3;
+    const safeIsPrivate = typeof isPrivate === 'boolean' ? isPrivate : false;
+
     const roomResult = await pool.query(
       `INSERT INTO rooms (
         id, name, host_id, max_players, drawing_time, voting_time, rounds, is_private, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,      [
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [
         roomCode,
         name,
         userId,
-        maxPlayers || 6,
-        drawingTime || 120,  // Changed from 60 to 120 seconds
-        votingTime || 20,    // Changed from 15 to 20 seconds
-        rounds || 3,
-        isPrivate || false,
+        safeMaxPlayers,
+        safeDrawingTime,
+        safeVotingTime,
+        safeRounds,
+        safeIsPrivate,
         "waiting",
       ],
     )
@@ -151,36 +158,43 @@ router.post("/:roomId/join", authenticateToken, async (req, res) => {
     const { roomId } = req.params
     const userId = req.user.id
 
+    console.log(`[DEBUG] /rooms/${roomId}/join called by user ${userId}`);
+
     // Check if room exists
     const roomResult = await pool.query("SELECT * FROM rooms WHERE id = $1", [roomId])
-
     if (roomResult.rows.length === 0) {
+      console.log(`[DEBUG] Room ${roomId} not found`);
       return res.status(404).json({ message: "Room not found" })
     }
 
     const room = roomResult.rows[0]
+    console.log(`[DEBUG] Room status: ${room.status}, max_players: ${room.max_players}`);
 
-    // Check if game is already in progress
-    if (room.status !== "waiting") {
-      return res.status(400).json({ message: "Game is already in progress" })
-    }
-
-    // Check if room is full
-    const playerCountResult = await pool.query("SELECT COUNT(*) FROM room_players WHERE room_id = $1", [roomId])
-
-    const playerCount = Number.parseInt(playerCountResult.rows[0].count)
-    if (playerCount >= room.max_players) {
-      return res.status(400).json({ message: "Room is full" })
-    }
 
     // Check if user is already in the room
     const existingPlayerResult = await pool.query("SELECT * FROM room_players WHERE room_id = $1 AND user_id = $2", [
       roomId,
       userId,
     ])
-
     if (existingPlayerResult.rows.length > 0) {
+      console.log(`[DEBUG] User ${userId} is already in room ${roomId}`);
+      // Allow rejoin regardless of room status
       return res.json({ message: "Already in room" })
+    }
+
+    // If not already in the room, only allow join if room is in waiting status
+    if (room.status !== "waiting") {
+      console.log(`[DEBUG] Room ${roomId} is not in waiting status (status: ${room.status}) and user is not already in room`);
+      return res.status(400).json({ message: "Game is already in progress" })
+    }
+
+    // Check if room is full
+    const playerCountResult = await pool.query("SELECT COUNT(*) FROM room_players WHERE room_id = $1", [roomId])
+    const playerCount = Number.parseInt(playerCountResult.rows[0].count)
+    console.log(`[DEBUG] Room ${roomId} player count: ${playerCount}`);
+    if (playerCount >= room.max_players) {
+      console.log(`[DEBUG] Room ${roomId} is full (${playerCount}/${room.max_players})`);
+      return res.status(400).json({ message: "Room is full" })
     }
 
     // Check if user is in any other rooms and remove them first
@@ -188,15 +202,13 @@ router.post("/:roomId/join", authenticateToken, async (req, res) => {
       userId, 
       roomId
     ])
-    
     if (otherRoomsResult.rows.length > 0) {
+      console.log(`[DEBUG] User ${userId} is in other rooms:`, otherRoomsResult.rows.map(r => r.room_id));
       // Remove user from all other rooms
       for (const row of otherRoomsResult.rows) {
         const otherRoomId = row.room_id;
-        
         // For each room, check if the user is the host
         const hostCheckResult = await pool.query("SELECT host_id FROM rooms WHERE id = $1", [otherRoomId]);
-        
         if (hostCheckResult.rows.length > 0 && hostCheckResult.rows[0].host_id === userId) {
           // Find new host
           const newHostResult = await pool.query(
@@ -206,30 +218,40 @@ router.post("/:roomId/join", authenticateToken, async (req, res) => {
              LIMIT 1`,
             [otherRoomId, userId]
           );
-          
           if (newHostResult.rows.length > 0) {
             // Assign new host
             await pool.query("UPDATE rooms SET host_id = $1 WHERE id = $2", 
               [newHostResult.rows[0].user_id, otherRoomId]
             );
+            console.log(`[DEBUG] Assigned new host ${newHostResult.rows[0].user_id} for room ${otherRoomId}`);
           } else {
             // No other players, delete the room
             await pool.query("DELETE FROM rooms WHERE id = $1", [otherRoomId]);
+            console.log(`[DEBUG] Deleted empty room ${otherRoomId}`);
           }
         }
       }
-      
       // Remove user from all other rooms
       await pool.query("DELETE FROM room_players WHERE user_id = $1 AND room_id != $2", [
         userId, 
         roomId
       ]);
+      console.log(`[DEBUG] Removed user ${userId} from all other rooms except ${roomId}`);
     }
 
-    // Add user to room
-    await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)", [roomId, userId])
-
-    res.json({ message: "Joined room successfully" })
+    // Add user to room (handle race condition for duplicate joins)
+    try {
+      await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2)", [roomId, userId])
+      console.log(`[DEBUG] User ${userId} added to room ${roomId}`);
+      res.json({ message: "Joined room successfully" })
+    } catch (err) {
+      if (err.code === '23505') { // duplicate key
+        console.log(`[DEBUG] User ${userId} already in room ${roomId} (duplicate key on insert)`);
+        res.json({ message: "Already in room" })
+      } else {
+        throw err;
+      }
+    }
   } catch (error) {
     console.error("Join room error:", error)
     res.status(500).json({ message: "Server error" })
@@ -375,17 +397,24 @@ router.post("/:roomId/start", authenticateToken, async (req, res) => {
 
     const prompt = promptResult.rows[0]
 
-    // Start the game
+    // Log for debugging
+    console.log('[DEBUG] Starting game for room', roomId, 'drawing_time:', room.drawing_time, 'typeof:', typeof room.drawing_time, 'server time:', new Date());
+
+    // Start the game (set phase_end_time using CURRENT_TIMESTAMP, which is UTC in your DB)
     await pool.query(
       `UPDATE rooms SET 
         status = 'playing', 
         current_round = 1, 
         current_phase = 'drawing', 
         current_prompt_id = $1,
-        phase_end_time = NOW() + (drawing_time * INTERVAL '1 second')
+        phase_end_time = CURRENT_TIMESTAMP + (drawing_time * INTERVAL '1 second')
       WHERE id = $2`,
       [prompt.id, roomId],
     )
+
+    // Log the new phase_end_time and DB time
+    const checkRoom = await pool.query('SELECT phase_end_time, NOW(), CURRENT_TIMESTAMP FROM rooms WHERE id = $1', [roomId]);
+    console.log('[DEBUG] New phase_end_time for room', roomId, ':', checkRoom.rows[0]?.phase_end_time, 'NOW():', checkRoom.rows[0]?.now, 'CURRENT_TIMESTAMP:', checkRoom.rows[0]?.current_timestamp);
 
     res.json({ message: "Game started successfully" })
   } catch (error) {

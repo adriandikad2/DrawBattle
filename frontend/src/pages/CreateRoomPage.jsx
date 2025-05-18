@@ -8,8 +8,8 @@ import { toast } from "react-toastify"
 function CreateRoomPage() {
   const [roomName, setRoomName] = useState("")
   const [maxPlayers, setMaxPlayers] = useState(6)
-  const [drawingTime, setDrawingTime] = useState(120) // Changed from 60 to 120 seconds
-  const [votingTime, setVotingTime] = useState(20) // Changed from 15 to 20 seconds
+  const [drawingTime, setDrawingTime] = useState(120)
+  const [votingTime, setVotingTime] = useState(20)
   const [rounds, setRounds] = useState(3)
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)

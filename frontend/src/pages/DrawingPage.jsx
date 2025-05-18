@@ -38,9 +38,8 @@ function DrawingPage() {
         }
 
         setPrompt(response.data.prompt)
-        // Ensure initial timeLeft is at least 5 seconds to prevent immediate "time's up"
-        // This gives users more time to see the prompt and start drawing
-        setTimeLeft(Math.max(5, response.data.timeLeft))
+        // Use the timeLeft value as provided by the backend (host's choice)
+        setTimeLeft(response.data.timeLeft)
         setIsSubmitted(response.data.hasSubmitted || false)
         setError(null)
       } catch (error) {
@@ -83,9 +82,7 @@ function DrawingPage() {
           response.data.timeLeft > timeLeft ||
           timeLeft < 3
         ) {
-          // Ensure we never set time to less than 5 seconds from a poll
-          // This gives users a better experience
-          setTimeLeft(Math.max(5, response.data.timeLeft))
+          setTimeLeft(response.data.timeLeft)
         }
         
         setIsSubmitted(response.data.hasSubmitted || false)

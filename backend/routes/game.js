@@ -5,6 +5,28 @@ const { upload, cloudinary } = require("../config/cloudinary")
 
 const router = express.Router()
 
+// Get all drawings for a user (for profile page)
+router.get("/user/:userId/drawings", authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    // Only allow users to fetch their own drawings (or add admin check if needed)
+    if (parseInt(userId) !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const drawingsResult = await pool.query(
+      `SELECT d.id, d.room_id, d.round_number, d.prompt_id, d.image_url, d.created_at, p.text as prompt_text
+       FROM drawings d
+       LEFT JOIN prompts p ON d.prompt_id = p.id
+       WHERE d.artist_id = $1
+       ORDER BY d.created_at DESC`,
+      [userId]
+    );
+    res.json({ drawings: drawingsResult.rows });
+  } catch (error) {
+    console.error("Get user drawings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // Get current game state
 router.get("/:roomId/state", authenticateToken, async (req, res) => {
   try {
@@ -37,11 +59,15 @@ router.get("/:roomId/state", authenticateToken, async (req, res) => {
     }
 
     // Calculate time left in current phase
-    let timeLeft = 0
+    let timeLeft = 0;
     if (room.phase_end_time) {
-      const phaseEndTime = new Date(room.phase_end_time).getTime()
-      const currentTime = new Date().getTime()
-      timeLeft = Math.max(0, Math.floor((phaseEndTime - currentTime) / 1000))
+      // Log for debugging
+      console.log('[DEBUG] phase_end_time from DB:', room.phase_end_time, 'current server time:', new Date());
+      const phaseEndTime = new Date(room.phase_end_time).getTime();
+      const currentTime = new Date().getTime();
+      timeLeft = Math.max(0, Math.floor((phaseEndTime - currentTime) / 1000));
+      // Log the computed timeLeft
+      console.log('[DEBUG] Computed timeLeft:', timeLeft, 'phase:', room.current_phase, 'drawing_time:', room.drawing_time);
     }
 
     // Check if user has submitted a drawing (if in drawing phase)
@@ -165,7 +191,7 @@ router.get("/:roomId/drawing-to-vote", authenticateToken, async (req, res) => {
     )
 
     if (roomResult.rows.length === 0) {
-      return res.status(400).json({ message: "Room not found or not in voting phase" })
+      return res.status(204).send();
     }
 
     const room = roomResult.rows[0]
@@ -197,7 +223,8 @@ router.get("/:roomId/drawing-to-vote", authenticateToken, async (req, res) => {
     // Get the current drawing to vote on
     const currentDrawingIndex = room.current_drawing_index || 0
     if (currentDrawingIndex >= drawingsResult.rows.length) {
-      return res.status(400).json({ message: "All drawings have been voted on" })
+      // All drawings have been voted on for this round
+      return res.status(204).send(); // No Content, signal frontend to move to next phase
     }
 
     const currentDrawing = drawingsResult.rows[currentDrawingIndex]
