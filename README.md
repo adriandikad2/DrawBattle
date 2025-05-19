@@ -1,8 +1,17 @@
 # 🎨 Draw Battle! 🖌️
 
-Draw Battle adalah sebuah aplikasi web multiplayer berbasis game di mana pemain dapat saling bertanding menggambar sesuai tema yang diberikan, lalu saling menilai hasil gambar satu sama lain. Lalu gambar dengan skor tertinggi akan memenangkan ronde tersebut.
-
+Draw Battle adalah aplikasi web multiplayer berbasis game di mana pemain dapat saling berkompetisi dengan menggambar sesuai tema yang diberikan, kemudian saling memberi penilaian pada hasil gambar. Gambar dengan skor tertinggi akan memenangkan ronde. 
 ---
+
+## ⚙️ Tech Stack
+
+![React](https://img.shields.io/badge/Frontend-React-blue?logo=react)
+![Vite](https://img.shields.io/badge/Build-Vite-purple?logo=vite)
+![Tailwind](https://img.shields.io/badge/Styling-TailwindCSS-38bdf8?logo=tailwindcss)
+![Node.js](https://img.shields.io/badge/Backend-Node.js-green?logo=node.js)
+![Express](https://img.shields.io/badge/API-Express-black?logo=express)
+![Cloudinary](https://img.shields.io/badge/Media-Cloudinary-blue?logo=cloudinary)
+
 
 ## Fitur Utama
 - **Buat & Gabung Room**: Pemain dapat membuat room baru atau bergabung ke room yang sudah ada.
