@@ -1022,7 +1022,7 @@ function HomePage() {
             <div style={styles.creditId}>2306266943</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Adrian Dika Darmawan" style={styles.creditImage} />
+            <img src="/src/assets/adrian.jpg" alt="Adrian Dika Darmawan" style={styles.creditImage} />
             <div style={styles.creditName}>Adrian Dika Darmawan</div>
             <div style={styles.creditId}>2306250711</div>
           </div>
