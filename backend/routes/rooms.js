@@ -1,7 +1,10 @@
 const express = require("express")
 const { v4: uuidv4 } = require("uuid")
 const { pool } = require("../config/db")
-const { authenticateToken } = require("../middleware/auth")
+const { authenticateToken } = require("../middleware/auth");
+const { EventEmitter } = require("events");
+
+const roomEvents = new EventEmitter();
 
 const router = express.Router()
 
@@ -423,4 +426,59 @@ router.post("/:roomId/start", authenticateToken, async (req, res) => {
   }
 })
 
-module.exports = router
+/**
+ * Monitor room activity and handle inactive users or hosts.
+ */
+setInterval(async () => {
+  try {
+    const inactiveThreshold = 60000; // 1 minute in milliseconds
+    const now = Date.now();
+
+    // Fetch all active rooms and their players
+    const roomsResult = await pool.query(`
+      SELECT r.id AS room_id, r.host_id, rp.user_id, rp.last_active
+      FROM rooms r
+      LEFT JOIN room_players rp ON r.id = rp.room_id
+    `);
+
+    const rooms = roomsResult.rows;
+
+    for (const room of rooms) {
+      const lastActive = new Date(room.last_active).getTime();
+
+      // Check if the host is inactive
+      if (room.host_id === room.user_id && now - lastActive > inactiveThreshold) {
+        const newHostResult = await pool.query(
+          `SELECT user_id FROM room_players 
+           WHERE room_id = $1 AND user_id != $2
+           ORDER BY joined_at ASC 
+           LIMIT 1`,
+          [room.room_id, room.host_id]
+        );
+
+        if (newHostResult.rows.length > 0) {
+          // Assign a new host
+          await pool.query("UPDATE rooms SET host_id = $1 WHERE id = $2", [
+            newHostResult.rows[0].user_id,
+            room.room_id,
+          ]);
+        } else {
+          // No players left, delete the room
+          await pool.query("DELETE FROM rooms WHERE id = $1", [room.room_id]);
+        }
+      }
+
+      // Remove inactive players
+      if (now - lastActive > inactiveThreshold) {
+        await pool.query("DELETE FROM room_players WHERE room_id = $1 AND user_id = $2", [
+          room.room_id,
+          room.user_id,
+        ]);
+      }
+    }
+  } catch (error) {
+    console.error("Error monitoring room activity:", error);
+  }
+}, 60000); // Run every minute
+
+module.exports = router;

@@ -393,6 +393,56 @@ router.post("/vote", authenticateToken, async (req, res) => {
   }
 })
 
+// Delete a drawing
+router.delete("/drawings/:drawingId", authenticateToken, async (req, res) => {
+  try {
+    const { drawingId } = req.params;
+    const userId = req.user.id;
+
+    // First check if the drawing exists and belongs to the user
+    const drawingResult = await pool.query(
+      "SELECT * FROM drawings WHERE id = $1",
+      [drawingId]
+    );
+
+    if (drawingResult.rows.length === 0) {
+      return res.status(404).json({ message: "Drawing not found" });
+    }
+
+    const drawing = drawingResult.rows[0];
+
+    // Verify the drawing belongs to the user
+    if (drawing.artist_id !== userId) {
+      return res.status(403).json({ message: "You can only delete your own drawings" });
+    }
+
+    // Delete the image from Cloudinary if it's stored there
+    if (drawing.image_url && drawing.image_url.includes('cloudinary')) {
+      try {
+        // Extract the public_id from the Cloudinary URL
+        const urlParts = drawing.image_url.split('/');
+        const filenameWithExtension = urlParts[urlParts.length - 1];
+        const publicId = filenameWithExtension.split('.')[0];
+        
+        await cloudinary.uploader.destroy(publicId);
+        console.log(`Deleted image from Cloudinary: ${publicId}`);
+      } catch (cloudinaryError) {
+        console.error("Error deleting image from Cloudinary:", cloudinaryError);
+        // Continue with deletion from database even if Cloudinary deletion fails
+      }
+    }
+
+    // Delete the drawing from the database
+    // Note: This will also delete associated stars due to ON DELETE CASCADE
+    await pool.query("DELETE FROM drawings WHERE id = $1", [drawingId]);
+
+    res.json({ message: "Drawing deleted successfully" });
+  } catch (error) {
+    console.error("Delete drawing error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Get leaderboard
 router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
   try {

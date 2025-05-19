@@ -29,14 +29,13 @@ function Navbar() {
         <nav className="navbar-links">
           {currentUser ? (
             <>
-              <Link to="/lobby" className="nav-link">
+              <Link to="/lobby" className="nav-link select-none">
                 Lobby
               </Link>
-              <Link to="/profile" className="nav-link">
-                Profile
-              </Link>
-              <div className="user-menu">
-                <span className="username">{currentUser.username}</span>
+              <div className="user-menu select-none">
+                <Link to="/profile" className="username nav-link">
+                  {currentUser.username}
+                </Link>
                 <button onClick={handleLogout} className="btn btn-secondary btn-sm">
                   Logout
                 </button>
@@ -44,10 +43,10 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link">
+              <Link to="/login" className="nav-link select-none">
                 Login
               </Link>
-              <Link to="/register" className="btn btn-primary btn-sm">
+              <Link to="/register" className="btn btn-primary btn-sm select-none">
                 Sign Up
               </Link>
             </>

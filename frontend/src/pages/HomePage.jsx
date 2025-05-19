@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react"
 import { useInView } from 'react-intersection-observer'
 import { FaPencilAlt, FaVoteYea, FaTrophy, FaPalette, FaUserFriends, FaChartLine } from 'react-icons/fa'
 import './HomePage.css'
+import '../styles/PageStyles.css'
 
 // --- Canvas Drawing Logic ---
 const canvasColors = {
@@ -780,7 +781,7 @@ function HomePage() {
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
-        >      <motion.h1 
+        >      <motion.h1 className="select-none pointer-events-none"
             style={{...styles.heroTitle, lineHeight: '1.2'}}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -789,7 +790,7 @@ function HomePage() {
             <span style={styles.gradientHeading}>Draw, Vote, Win!</span>
           </motion.h1>
           
-          <motion.p 
+          <motion.p className="select-none pointer-events-none"
             style={styles.heroSubtitle}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -806,7 +807,7 @@ function HomePage() {
             transition={{ duration: 0.5, delay: 0.6 }}
           >
             {currentUser ? (
-              <motion.div 
+              <motion.div className="select-none"
                 variants={buttonVariants}
                 initial="initial"
                 whileHover="hover"
@@ -818,7 +819,7 @@ function HomePage() {
               </motion.div>
             ) : (
               <>
-                <motion.div 
+                <motion.div className="select-none"
                   variants={buttonVariants}
                   initial="initial"
                   whileHover="hover"
@@ -828,7 +829,7 @@ function HomePage() {
                     Get Started
                   </Link>
                 </motion.div>
-                <motion.div 
+                <motion.div className="select-none"
                   variants={buttonVariants}
                   initial="initial"
                   whileHover="hover"
@@ -869,7 +870,7 @@ function HomePage() {
         animate={stepsInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <motion.h2 
+        <motion.h2 className="select-none"
           style={styles.sectionTitle}
           initial={{ opacity: 0, y: 20 }}
           animate={stepsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -892,8 +893,8 @@ function HomePage() {
             <div style={styles.stepIcon}>
               <FaPencilAlt />
             </div>
-            <h3 style={styles.stepTitle}>1. Draw</h3>
-            <p style={styles.stepDescription}>Get a random prompt and create your masterpiece within the time limit</p>
+            <h3 className="select-none pointer-events-none" style={styles.stepTitle}>1. Draw</h3>
+            <p className="select-none pointer-events-none" style={styles.stepDescription}>Get a random prompt and create your masterpiece within the time limit</p>
           </motion.div>
           
           <motion.div 
@@ -906,8 +907,8 @@ function HomePage() {
             <div style={styles.stepIcon}>
               <FaVoteYea />
             </div>
-            <h3 style={styles.stepTitle}>2. Vote</h3>
-            <p style={styles.stepDescription}>Rate other players' drawings from 1 to 5 stars during the voting phase</p>
+            <h3 className="select-none pointer-events-none" style={styles.stepTitle}>2. Vote</h3>
+            <p className="select-none pointer-events-none" style={styles.stepDescription}>Rate other players' drawings from 1 to 5 stars during the voting phase</p>
           </motion.div>
           
           <motion.div 
@@ -920,8 +921,8 @@ function HomePage() {
             <div style={styles.stepIcon}>
               <FaTrophy />
             </div>
-            <h3 style={styles.stepTitle}>3. Win</h3>
-            <p style={styles.stepDescription}>See the results on the leaderboard and claim your victory</p>
+            <h3 className="select-none pointer-events-none" style={styles.stepTitle}>3. Win</h3>
+            <p className="select-none pointer-events-none" style={styles.stepDescription}>See the results on the leaderboard and claim your victory</p>
           </motion.div>
         </div>
       </motion.section>
@@ -934,7 +935,7 @@ function HomePage() {
         animate={featuresInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <motion.h2 
+        <motion.h2 className="select-none pointer-events-none"
           style={styles.sectionTitle}
           initial={{ opacity: 0, y: 20 }}
           animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -956,8 +957,8 @@ function HomePage() {
             <div style={styles.featureIcon}>
               <FaPalette />
             </div>
-            <h3 style={styles.featureTitle}>Real-time Drawing</h3>
-            <p style={styles.featureDescription}>Draw with a responsive canvas that works on desktop and mobile</p>
+            <h3 className="select-none pointer-events-none" style={styles.featureTitle}>Real-time Drawing</h3>
+            <p className="select-none pointer-events-none" style={styles.featureDescription}>Draw with a responsive canvas that works on desktop and mobile</p>
           </motion.div>
           
           <motion.div 
@@ -972,8 +973,8 @@ function HomePage() {
             <div style={styles.featureIcon}>
               <FaVoteYea />
             </div>
-            <h3 style={styles.featureTitle}>Fair Voting</h3>
-            <p style={styles.featureDescription}>Anonymous voting system ensures fair and unbiased results</p>
+            <h3 className="select-none pointer-events-none" style={styles.featureTitle}>Fair Voting</h3>
+            <p className="select-none pointer-events-none" style={styles.featureDescription}>Anonymous voting system ensures fair and unbiased results</p>
           </motion.div>
           
           <motion.div 
@@ -988,8 +989,8 @@ function HomePage() {
             <div style={styles.featureIcon}>
               <FaUserFriends />
             </div>
-            <h3 style={styles.featureTitle}>Custom Rooms</h3>
-            <p style={styles.featureDescription}>Create private rooms to play with friends or join public games</p>
+            <h3 className="select-none pointer-events-none" style={styles.featureTitle}>Custom Rooms</h3>
+            <p className="select-none pointer-events-none" style={styles.featureDescription}>Create private rooms to play with friends or join public games</p>
           </motion.div>
           
           <motion.div 
@@ -1004,8 +1005,8 @@ function HomePage() {
             <div style={styles.featureIcon}>
               <FaChartLine />
             </div>
-            <h3 style={styles.featureTitle}>Leaderboards</h3>
-            <p style={styles.featureDescription}>Track your progress and compete for the top spot</p>
+            <h3 className="select-none pointer-events-none" style={styles.featureTitle}>Leaderboards</h3>
+            <p className="select-none pointer-events-none" style={styles.featureDescription}>Track your progress and compete for the top spot</p>
           </motion.div>
         </div>
       </motion.section>

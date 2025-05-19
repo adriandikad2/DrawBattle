@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import "../styles/PageStyles.css"
 import { useParams, useNavigate } from "react-router-dom"
 import { gameService } from "../services/api"
 import { toast } from "react-toastify"

@@ -39,8 +39,8 @@ export const roomService = {
   getRoomDetails: (roomId) => api.get(`/rooms/${roomId}`),
 }
 
-// Game related API calls
 export const gameService = {
+  deleteDrawing: (drawingId) => api.delete(`/game/drawings/${drawingId}`),
   submitDrawing: (roomId, drawingData) => {
     // Convert base64 image to file
     const formData = new FormData()
