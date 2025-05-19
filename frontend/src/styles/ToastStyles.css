@@ -1,0 +1,54 @@
+/* Custom toast notification styling for DrawBattle */
+
+/* Make toast text color white for all toasts */
+.Toastify__toast {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+/* Toast message body */
+.Toastify__toast-body {
+  color: white !important;
+}
+
+/* Style for success toast */
+.Toastify__toast--success {
+  background: linear-gradient(45deg, var(--success-color), #059669) !important;
+}
+
+/* Style for error toast */
+.Toastify__toast--error {
+  background: linear-gradient(45deg, var(--error-color), #dc2626) !important;
+}
+
+/* Style for info toast */
+.Toastify__toast--info {
+  background: linear-gradient(45deg, #3b82f6, #2563eb) !important;
+  color: white !important;
+}
+
+/* Style for warning toast */
+.Toastify__toast--warning {
+  background: linear-gradient(45deg, #f59e0b, #d97706) !important;
+  color: white !important;
+}
+
+/* Make toast close button white */
+.Toastify__close-button {
+  color: white !important;
+  opacity: 0.8;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1;
+}
+
+/* Make progress bar more visible against colored backgrounds */
+.Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Make toast icons white */
+.Toastify__toast-icon svg {
+  fill: white !important;
+}
