@@ -348,6 +348,38 @@ router.post("/vote", authenticateToken, async (req, res) => {
       if (nextDrawingIndex >= drawingCount) {
         // All drawings have been voted on, check if this was the last round
         if (room.current_round >= room.rounds) {
+          // Calculate and save final standings before moving to results phase
+          const playersResult = await pool.query(
+            `SELECT rp.user_id, u.username
+             FROM room_players rp
+             JOIN users u ON rp.user_id = u.id
+             WHERE rp.room_id = $1`,
+            [drawing.room_id]
+          );
+
+          // Calculate final scores
+          for (const player of playersResult.rows) {
+            const ratingsResult = await pool.query(
+              `SELECT AVG(v.rating) as avg_rating
+               FROM drawings d
+               JOIN stars v ON d.id = v.drawing_id
+               WHERE d.room_id = $1 AND d.artist_id = $2`,
+              [drawing.room_id, player.user_id]
+            );
+
+            const avgRating = ratingsResult.rows[0].avg_rating || 0;
+            const score = Math.round(avgRating * 20); // Convert to 0-100 scale
+
+            await pool.query(
+              `INSERT INTO game_results (room_id, user_id, username, score, rank)
+               VALUES ($1::VARCHAR(6), $2, $3, $4, 
+                 (SELECT COUNT(*) + 1 
+                  FROM game_results gr 
+                  WHERE gr.room_id = $1::VARCHAR(6) AND gr.score > $4))`,
+              [drawing.room_id, player.user_id, player.username, score]
+            );
+          }
+
           // Game is over, move to results phase
           await pool.query("UPDATE rooms SET current_phase = $1, phase_end_time = NULL WHERE id = $2", [
             "results",
@@ -458,39 +490,49 @@ router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
 
     const room = roomResult.rows[0]
 
-    // Get all players in the room
-    const playersResult = await pool.query(
-      `SELECT rp.user_id, u.username
-       FROM room_players rp
-       JOIN users u ON rp.user_id = u.id
-       WHERE rp.room_id = $1`,
-      [roomId],
-    )
-
-    // Calculate scores for each player
-    const players = []
-    for (const player of playersResult.rows) {
-      // Get average rating for player's drawings
-      const ratingsResult = await pool.query(
-        `SELECT AVG(v.rating) as avg_rating
-         FROM drawings d
-         JOIN stars v ON d.id = v.drawing_id
-         WHERE d.room_id = $1 AND d.artist_id = $2`,
-        [roomId, player.user_id],
+    // Get final standings from game_results if game is in results phase
+    let players = []
+    if (room.current_phase === 'results') {
+      const resultsQuery = await pool.query(
+        `SELECT user_id as id, username, score, rank 
+         FROM game_results 
+         WHERE room_id = $1::VARCHAR(6) 
+         ORDER BY rank ASC`,
+        [roomId]
+      )
+      players = resultsQuery.rows
+    } else {
+      // Calculate current standings for in-progress game
+      const playersResult = await pool.query(
+        `SELECT rp.user_id, u.username
+         FROM room_players rp
+         JOIN users u ON rp.user_id = u.id
+         WHERE rp.room_id = $1`,
+        [roomId]
       )
 
-      const avgRating = ratingsResult.rows[0].avg_rating || 0
-      const score = Math.round(avgRating * 20) // Convert to 0-100 scale
+      for (const player of playersResult.rows) {
+        const ratingsResult = await pool.query(
+          `SELECT AVG(v.rating) as avg_rating
+           FROM drawings d
+           JOIN stars v ON d.id = v.drawing_id
+           WHERE d.room_id = $1 AND d.artist_id = $2`,
+          [roomId, player.user_id]
+        )
 
-      players.push({
-        id: player.user_id,
-        username: player.username,
-        score,
-      })
+        const avgRating = ratingsResult.rows[0].avg_rating || 0
+        const score = Math.round(avgRating * 20) // Convert to 0-100 scale
+
+        players.push({
+          id: player.user_id,
+          username: player.username,
+          score,
+        })
+      }
+
+      // Sort players by score (highest first)
+      players.sort((a, b) => b.score - a.score)
     }
-
-    // Sort players by score (highest first)
-    players.sort((a, b) => b.score - a.score)
 
     // Get all drawings with their ratings
     const drawingsResult = await pool.query(
