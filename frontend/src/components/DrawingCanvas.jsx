@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import "./DrawingCanvas.css"
 
 function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
   const canvasRef = useRef(null)
@@ -10,13 +11,25 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
   const [brushSize, setBrushSize] = useState(5)
   const [hasDrawn, setHasDrawn] = useState(false)
   const [autoSubmitted, setAutoSubmitted] = useState(false)
+  const [currentTool, setCurrentTool] = useState('brush') // brush, eraser, bucket
+  const [brushType, setBrushType] = useState('normal') // normal, spraycan, crayon
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
+  const [history, setHistory] = useState([])
+  const [currentStep, setCurrentStep] = useState(-1)
+
+  // Color palette
+  const colorPalette = {
+    primary: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], // ROY G BIV
+    pastel: ['#FFB3B3', '#FFD9B3', '#FFFFB3', '#B3FFB3', '#B3B3FF', '#D9B3FF', '#FFB3FF'], // Pastel ROY G BIV
+    monochrome: ['#000000', '#333333', '#666666', '#999999', '#CCCCCC'], // Monochromatic
+    earth: ['#8B4513', '#A0522D', '#6B4423', '#8B7355', '#DAA520'] // Brown shades
+  }
 
   // Initialize canvas
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    // Set canvas dimensions
     canvas.width = canvas.offsetWidth
     canvas.height = canvas.offsetHeight
 
@@ -33,7 +46,6 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
       context.fillRect(0, 0, canvas.width, canvas.height)
     }
 
-    // Handle window resize
     const handleResize = () => {
       if (!context) return
 
@@ -57,12 +69,13 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
   // Update brush properties when they change
   useEffect(() => {
     if (ctx) {
-      ctx.strokeStyle = color
+      ctx.strokeStyle = currentTool === 'eraser' ? 'white' : color
       ctx.lineWidth = brushSize
     }
-  }, [color, brushSize, ctx])  // Auto-submit when time runs out
+  }, [color, brushSize, ctx, currentTool])
+
+  // Auto-submit logic
   useEffect(() => {
-    // Add a small delay before checking timeLeft to prevent false "time's up" at game start
     const timer = setTimeout(() => {
       if (timeLeft === 0 && !autoSubmitted && hasDrawn) {
         console.log("Auto-submitting drawing as time ran out");
@@ -73,19 +86,13 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
     
     return () => clearTimeout(timer);
   }, [timeLeft, autoSubmitted, hasDrawn]);
-  
-  // Add a backup timer that will auto-submit shortly before the server ends the phase
-  // This ensures submission happens even if the user doesn't interact with the canvas
+
   useEffect(() => {
-    // Only set backup timer if time is running and drawing hasn't been submitted yet
     if (timeLeft > 3 && !autoSubmitted && !disabled) {
       const backupTimer = setTimeout(() => {
         if (!autoSubmitted) {
-          // Auto-submit whatever is on the canvas, even if it's blank
-          // Better to submit a blank drawing than none at all
           console.log("Auto-submitting drawing as backup before time runs out");
           
-          // If they haven't drawn anything, make a small mark so there's something to submit
           if (!hasDrawn && ctx && canvasRef.current) {
             ctx.strokeStyle = "#000000";
             ctx.lineWidth = 1;
@@ -100,7 +107,7 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
           handleSave();
           setAutoSubmitted(true);
         }
-      }, (timeLeft - 2) * 1000); // Submit 2 seconds before server timer expires
+      }, (timeLeft - 2) * 1000);
       
       return () => clearTimeout(backupTimer);
     }
@@ -114,53 +121,139 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
 
     if (!ctx) return
 
-    let x, y
+    const { x, y } = getCoordinates(e)
+    setStartPos({ x, y })
 
+    if (currentTool === 'brush' || currentTool === 'eraser') {
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+    }
+  }
+
+  const getCoordinates = (e) => {
+    let x, y
     if (e.touches) {
-      // Touch event
       const rect = canvasRef.current.getBoundingClientRect()
       x = e.touches[0].clientX - rect.left
       y = e.touches[0].clientY - rect.top
     } else {
-      // Mouse event
       x = e.nativeEvent.offsetX
       y = e.nativeEvent.offsetY
     }
-
-    ctx.beginPath()
-    ctx.moveTo(x, y)
+    return { x, y }
   }
 
   const draw = (e) => {
     if (!isDrawing || !ctx || disabled) return
 
-    let x, y
+    const { x, y } = getCoordinates(e)
 
-    if (e.touches) {
-      // Touch event
-      const rect = canvasRef.current.getBoundingClientRect()
-      x = e.touches[0].clientX - rect.left
-      y = e.touches[0].clientY - rect.top
-    } else {
-      // Mouse event
-      x = e.nativeEvent.offsetX
-      y = e.nativeEvent.offsetY
+    if (currentTool === 'brush' || currentTool === 'eraser') {
+      drawWithBrush(x, y)
+    } else if (currentTool === 'bucket') {
+      bucketFill(Math.floor(x), Math.floor(y), color)
     }
+  }
 
-    ctx.lineTo(x, y)
-    ctx.stroke()
+  const drawWithBrush = (x, y) => {
+    switch (brushType) {
+      case 'normal':
+        ctx.lineTo(x, y)
+        ctx.stroke()
+        break
+      case 'spraycan':
+        for (let i = 0; i < 20; i++) {
+          const offsetX = (Math.random() - 0.5) * brushSize * 2
+          const offsetY = (Math.random() - 0.5) * brushSize * 2
+          ctx.beginPath()
+          ctx.arc(x + offsetX, y + offsetY, 1, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        break
+      case 'crayon':
+        const angle = Math.random() * Math.PI * 2
+        ctx.lineTo(x + Math.cos(angle) * 2, y + Math.sin(angle) * 2)
+        ctx.stroke()
+        break
+    }
+  }
+
+  const saveToHistory = () => {
+    if (!canvasRef.current) return
+    const newHistory = history.slice(0, currentStep + 1)
+    newHistory.push(canvasRef.current.toDataURL())
+    setHistory(newHistory)
+    setCurrentStep(newHistory.length - 1)
+  }
+
+  const undo = () => {
+    if (currentStep > 0) {
+      const img = new Image()
+      img.src = history[currentStep - 1]
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+        ctx.drawImage(img, 0, 0)
+        setCurrentStep(currentStep - 1)
+      }
+    }
+  }
+
+  const redo = () => {
+    if (currentStep < history.length - 1) {
+      const img = new Image()
+      img.src = history[currentStep + 1]
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+        ctx.drawImage(img, 0, 0)
+        setCurrentStep(currentStep + 1)
+      }
+    }
   }
 
   const stopDrawing = () => {
     setIsDrawing(false)
     if (ctx) {
       ctx.closePath()
+      saveToHistory()
     }
+  }
+
+  const bucketFill = (startX, startY, fillColor) => {
+    const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height)
+    const pixels = imageData.data
+
+    const startPos = (startY * canvasRef.current.width + startX) * 4
+    const startR = pixels[startPos]
+    const startG = pixels[startPos + 1]
+    const startB = pixels[startPos + 2]
+
+    const fillR = parseInt(fillColor.substr(1, 2), 16)
+    const fillG = parseInt(fillColor.substr(3, 2), 16)
+    const fillB = parseInt(fillColor.substr(5, 2), 16)
+
+    const stack = [[startX, startY]]
+
+    while (stack.length) {
+      const [x, y] = stack.pop()
+      const pos = (y * canvasRef.current.width + x) * 4
+
+      if (x < 0 || x >= canvasRef.current.width || y < 0 || y >= canvasRef.current.height) continue
+      if (pixels[pos] !== startR || pixels[pos + 1] !== startG || pixels[pos + 2] !== startB) continue
+      if (pixels[pos + 3] === 0) continue
+
+      pixels[pos] = fillR
+      pixels[pos + 1] = fillG
+      pixels[pos + 2] = fillB
+      pixels[pos + 3] = 255
+
+      stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1])
+    }
+
+    ctx.putImageData(imageData, 0, 0)
   }
 
   const clearCanvas = () => {
     if (!ctx || !canvasRef.current || disabled) return
-
     ctx.fillStyle = "white"
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
     setHasDrawn(false)
@@ -168,7 +261,6 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
 
   const handleSave = () => {
     if (!canvasRef.current) return
-
     const drawingData = canvasRef.current.toDataURL("image/png")
     onSave(drawingData)
   }
@@ -176,13 +268,99 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
   return (
     <div className="drawing-canvas-container">
       <div className="drawing-tools">
-        <div className="color-picker">
-          <label htmlFor="color">Color:</label>
-          <input type="color" id="color" value={color} onChange={(e) => setColor(e.target.value)} disabled={disabled} />
+        {/* Tool Selection */}
+        <div className="tool-buttons">
+          <button 
+            onClick={() => setCurrentTool('brush')}
+            className={`tool-btn ${currentTool === 'brush' ? 'active' : ''}`}
+            disabled={disabled}
+          >
+            🖌️
+          </button>
+          <button 
+            onClick={() => setCurrentTool('eraser')}
+            className={`tool-btn ${currentTool === 'eraser' ? 'active' : ''}`}
+            disabled={disabled}
+          >
+            🧼
+          </button>
+          <button 
+            onClick={() => setCurrentTool('bucket')}
+            className={`tool-btn ${currentTool === 'bucket' ? 'active' : ''}`}
+            disabled={disabled}
+          >
+            🪣
+          </button>
+          <button
+            onClick={undo}
+            className="tool-btn"
+            disabled={disabled || currentStep <= 0}
+          >
+            ↩️
+          </button>
+          <button
+            onClick={redo}
+            className="tool-btn"
+            disabled={disabled || currentStep >= history.length - 1}
+          >
+            ↪️
+          </button>
+        </div>
+
+        {/* Brush Type Selection - only visible when brush tool is selected */}
+        {currentTool === 'brush' && (
+          <div className="brush-types">
+            <button 
+              onClick={() => setBrushType('normal')}
+              className={`brush-type-btn ${brushType === 'normal' ? 'active' : ''}`}
+              disabled={disabled}
+            >
+              🖊️
+            </button>
+            <button 
+              onClick={() => setBrushType('spraycan')}
+              className={`brush-type-btn ${brushType === 'spraycan' ? 'active' : ''}`}
+              disabled={disabled}
+            >
+              ✏️
+            </button>
+            <button 
+              onClick={() => setBrushType('crayon')}
+              className={`brush-type-btn ${brushType === 'crayon' ? 'active' : ''}`}
+              disabled={disabled}
+            >
+              🖍️
+            </button>
+          </div>
+        )}
+
+        {/* Color Palette */}
+        <div className="color-section">
+          <h3 className="color-title">Colors</h3>
+          <div className="fancy-color-picker">
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              disabled={disabled}
+            />
+            <span className="color-preview" style={{ backgroundColor: color }} />
+          </div>
+        </div>
+        <div className="color-palette">
+          {Object.values(colorPalette).flat().map((paletteColor, index) => (
+            <button
+              key={index}
+              className={`color-btn ${color === paletteColor ? 'active' : ''}`}
+              style={{ backgroundColor: paletteColor }}
+              onClick={() => setColor(paletteColor)}
+              disabled={disabled}
+            />
+          ))}
         </div>
 
         <div className="brush-size">
-          <label htmlFor="brush-size">Brush Size:</label>
+          <label htmlFor="brush-size">Size:</label>
           <input
             type="range"
             id="brush-size"
@@ -194,7 +372,11 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
           />
         </div>
 
-        <button className="btn btn-secondary" onClick={clearCanvas} disabled={disabled}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={clearCanvas} 
+          disabled={disabled}
+        >
           Clear Canvas
         </button>
       </div>
@@ -211,12 +393,15 @@ function DrawingCanvas({ onSave, timeLeft, disabled = false }) {
           onTouchEnd={stopDrawing}
           className={`drawing-canvas ${disabled ? "disabled" : ""}`}
         />
-      </div>      {!disabled && (
+      </div>      
+      
+      {!disabled && (
         <div className="canvas-actions">
           <button 
             className="btn btn-primary" 
             onClick={handleSave} 
-            disabled={!hasDrawn || (timeLeft === 0 && !autoSubmitted)}>
+            disabled={!hasDrawn || (timeLeft === 0 && !autoSubmitted)}
+          >
             Submit Drawing
           </button>
         </div>
