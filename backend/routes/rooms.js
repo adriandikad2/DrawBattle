@@ -6,9 +6,6 @@ const { EventEmitter } = require("events");
 
 const roomEvents = new EventEmitter();
 
-// Track empty rooms and their timestamps
-const emptyRooms = new Map();
-
 const router = express.Router()
 
 // Get all public rooms
@@ -429,9 +426,8 @@ router.post("/:roomId/start", authenticateToken, async (req, res) => {
   }
 })
 
-/**
- * Monitor room activity and handle inactive users or hosts.
- */
+// Room inactivity monitoring temporarily disabled
+/*
 setInterval(async () => {
   try {
     const inactiveThreshold = 60000; // 1 minute in milliseconds
@@ -483,59 +479,6 @@ setInterval(async () => {
     console.error("Error monitoring room activity:", error);
   }
 }, 60000); // Run every minute
-
-/**
- * Monitor empty rooms and delete them after 30 seconds of being empty
- */
-setInterval(async () => {
-  try {
-    // Get all room IDs
-    const roomsResult = await pool.query(`
-      SELECT r.id, 
-             COUNT(rp.user_id) as player_count
-      FROM rooms r
-      LEFT JOIN room_players rp ON r.id = rp.room_id
-      GROUP BY r.id
-    `);
-
-    const now = Date.now();
-
-    // Check each room
-    for (const room of roomsResult.rows) {
-      const playerCount = parseInt(room.player_count);
-      
-      if (playerCount === 0) {
-        // Room is empty
-        if (!emptyRooms.has(room.id)) {
-          // First time seeing this empty room, record the timestamp
-          emptyRooms.set(room.id, now);
-        } else {
-          // Check if it's been empty for more than 30 seconds
-          const emptyTime = emptyRooms.get(room.id);
-          if (now - emptyTime >= 30000) { // 30 seconds in milliseconds
-            // Delete the room
-            await pool.query("DELETE FROM rooms WHERE id = $1", [room.id]);
-            // Remove from tracking
-            emptyRooms.delete(room.id);
-            console.log(`Deleted room ${room.id} after being empty for 30 seconds`);
-          }
-        }
-      } else {
-        // Room has players, remove from empty tracking if it was there
-        emptyRooms.delete(room.id);
-      }
-    }
-
-    // Cleanup any tracked rooms that no longer exist
-    for (const [roomId] of emptyRooms) {
-      const roomExists = roomsResult.rows.some(r => r.id === roomId);
-      if (!roomExists) {
-        emptyRooms.delete(roomId);
-      }
-    }
-  } catch (error) {
-    console.error("Error monitoring empty rooms:", error);
-  }
-}, 5000); // Check every 5 seconds
+*/
 
 module.exports = router;

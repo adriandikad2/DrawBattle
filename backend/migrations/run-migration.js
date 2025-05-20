@@ -1,23 +1,24 @@
-const { pool } = require("../config/db")
-const fs = require("fs")
-const path = require("path")
+const fs = require('fs');
+const path = require('path');
+const { pool } = require('../config/db');
 
 async function runMigration() {
   try {
-    // Read the SQL file
-    const sqlPath = path.join(__dirname, "add_game_results_table.sql")
-    const sql = fs.readFileSync(sqlPath, "utf8")
+    // Read the migration SQL file
+    const migrationSQL = fs.readFileSync(
+      path.join(__dirname, 'add_game_results_table.sql'),
+      'utf8'
+    );
 
-    // Execute the SQL
-    await pool.query(sql)
-    console.log("Migration completed successfully")
+    // Run the migration
+    await pool.query(migrationSQL);
     
-    // Close the pool
-    await pool.end()
+    console.log('Migration completed successfully');
+    process.exit(0);
   } catch (error) {
-    console.error("Migration failed:", error)
-    process.exit(1)
+    console.error('Migration failed:', error);
+    process.exit(1);
   }
 }
 
-runMigration()
+runMigration();

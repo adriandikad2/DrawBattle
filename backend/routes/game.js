@@ -52,14 +52,29 @@ router.get("/:roomId/state", authenticateToken, async (req, res) => {
 
     const room = roomResult.rows[0]
 
-    // Check if user is in the room
+    // Check if user is in the room and revalidate session if needed
     const playerResult = await pool.query("SELECT * FROM room_players WHERE room_id = $1 AND user_id = $2", [
       roomId,
       userId,
     ])
 
     if (playerResult.rows.length === 0) {
-      return res.status(403).json({ message: "You are not in this room" })
+      // Try to automatically rejoin if game is in progress and user was previously in room
+      const wasInRoomResult = await pool.query(
+        "SELECT 1 FROM drawings WHERE room_id = $1 AND artist_id = $2 AND round_number = $3",
+        [roomId, userId, room.current_round]
+      );
+      
+      if (wasInRoomResult.rows.length > 0) {
+        // User has drawings in current round, allow rejoin
+        await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [
+          roomId,
+          userId,
+        ]);
+        console.log(`[DEBUG] Automatically rejoined user ${userId} to room ${roomId} during gameplay`);
+      } else {
+        return res.status(403).json({ message: "You are not in this room" });
+      }
     }
 
     // Calculate time left in current phase
@@ -114,14 +129,29 @@ router.post("/:roomId/submit-drawing", authenticateToken, upload.single("drawing
 
     const room = roomResult.rows[0]
 
-    // Check if user is in the room
+    // Check if user is in the room and revalidate session if needed
     const playerResult = await pool.query("SELECT * FROM room_players WHERE room_id = $1 AND user_id = $2", [
       roomId,
       userId,
     ])
 
     if (playerResult.rows.length === 0) {
-      return res.status(403).json({ message: "You are not in this room" })
+      // Try to automatically rejoin if game is in progress and user was previously in room this round
+      const wasInRoomThisRoundResult = await pool.query(
+        "SELECT 1 FROM drawings WHERE room_id = $1 AND artist_id = $2 AND round_number < $3",
+        [roomId, userId, room.current_round]
+      );
+      
+      if (wasInRoomThisRoundResult.rows.length > 0) {
+        // User has drawings from previous rounds, allow rejoin
+        await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [
+          roomId,
+          userId,
+        ]);
+        console.log(`[DEBUG] Automatically rejoined user ${userId} to room ${roomId} during drawing phase`);
+      } else {
+        return res.status(403).json({ message: "You are not in this room" });
+      }
     }
 
     // Check if user has already submitted a drawing for this round
@@ -200,14 +230,29 @@ router.get("/:roomId/drawing-to-vote", authenticateToken, async (req, res) => {
 
     const room = roomResult.rows[0]
 
-    // Check if user is in the room
+    // Check if user is in the room and revalidate session if needed
     const playerResult = await pool.query("SELECT * FROM room_players WHERE room_id = $1 AND user_id = $2", [
       roomId,
       userId,
     ])
 
     if (playerResult.rows.length === 0) {
-      return res.status(403).json({ message: "You are not in this room" })
+      // Try to automatically rejoin if game is in progress and user was previously in room
+      const wasInRoomResult = await pool.query(
+        "SELECT 1 FROM drawings WHERE room_id = $1 AND artist_id = $2 AND round_number = $3",
+        [roomId, userId, room.current_round]
+      );
+      
+      if (wasInRoomResult.rows.length > 0) {
+        // User has drawings in current round, allow rejoin
+        await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [
+          roomId,
+          userId,
+        ]);
+        console.log(`[DEBUG] Automatically rejoined user ${userId} to room ${roomId} during voting phase`);
+      } else {
+        return res.status(403).json({ message: "You are not in this room" });
+      }
     }
 
     // Get all drawings for this round
@@ -281,14 +326,45 @@ router.post("/vote", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Valid drawing ID and rating (1-5) are required" })
     }
 
-    // Get drawing details
-    const drawingResult = await pool.query("SELECT * FROM drawings WHERE id = $1", [drawingId])
+    // Get drawing details and room info
+    const drawingResult = await pool.query(
+      `SELECT d.*, r.current_phase, r.current_round
+       FROM drawings d
+       JOIN rooms r ON d.room_id = r.id 
+       WHERE d.id = $1`, 
+      [drawingId]
+    )
 
     if (drawingResult.rows.length === 0) {
       return res.status(404).json({ message: "Drawing not found" })
     }
 
     const drawing = drawingResult.rows[0]
+
+    // Check if user is in the room and revalidate session if needed
+    const playerResult = await pool.query("SELECT * FROM room_players WHERE room_id = $1 AND user_id = $2", [
+      drawing.room_id,
+      userId,
+    ])
+
+    if (playerResult.rows.length === 0) {
+      // Try to automatically rejoin if game is in progress and user was previously in room
+      const wasInRoomResult = await pool.query(
+        "SELECT 1 FROM drawings WHERE room_id = $1 AND artist_id = $2 AND round_number = $3",
+        [drawing.room_id, userId, drawing.current_round]
+      );
+      
+      if (wasInRoomResult.rows.length > 0) {
+        // User has drawings in current round, allow rejoin
+        await pool.query("INSERT INTO room_players (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [
+          drawing.room_id,
+          userId,
+        ]);
+        console.log(`[DEBUG] Automatically rejoined user ${userId} to room ${drawing.room_id} during voting phase`);
+      } else {
+        return res.status(403).json({ message: "You are not in this room" });
+      }
+    }
 
     // Check if user is voting on their own drawing
     if (drawing.artist_id === userId) {
@@ -348,8 +424,8 @@ router.post("/vote", authenticateToken, async (req, res) => {
       if (nextDrawingIndex >= drawingCount) {
         // All drawings have been voted on, check if this was the last round
         if (room.current_round >= room.rounds) {
-          // Calculate and save final standings before moving to results phase
-          const playersResult = await pool.query(
+          // Game is over, calculate and save final standings before moving to results phase
+          const finalPlayersResult = await pool.query(
             `SELECT rp.user_id, u.username
              FROM room_players rp
              JOIN users u ON rp.user_id = u.id
@@ -357,8 +433,8 @@ router.post("/vote", authenticateToken, async (req, res) => {
             [drawing.room_id]
           );
 
-          // Calculate final scores
-          for (const player of playersResult.rows) {
+          // Calculate and save final scores for each player
+          for (const [index, player] of finalPlayersResult.rows.entries()) {
             const ratingsResult = await pool.query(
               `SELECT AVG(v.rating) as avg_rating
                FROM drawings d
@@ -370,21 +446,22 @@ router.post("/vote", authenticateToken, async (req, res) => {
             const avgRating = ratingsResult.rows[0].avg_rating || 0;
             const score = Math.round(avgRating * 20); // Convert to 0-100 scale
 
+            // Save to game_results table
             await pool.query(
               `INSERT INTO game_results (room_id, user_id, username, score, rank)
-               VALUES ($1::VARCHAR(6), $2, $3, $4, 
-                 (SELECT COUNT(*) + 1 
-                  FROM game_results gr 
-                  WHERE gr.room_id = $1::VARCHAR(6) AND gr.score > $4))`,
-              [drawing.room_id, player.user_id, player.username, score]
+               VALUES ($1, $2, $3, $4, $5)
+               ON CONFLICT (room_id, user_id) DO UPDATE
+               SET score = EXCLUDED.score,
+                   rank = EXCLUDED.rank`,
+              [drawing.room_id, player.user_id, player.username, score, index + 1]
             );
           }
 
-          // Game is over, move to results phase
+          // Move to results phase
           await pool.query("UPDATE rooms SET current_phase = $1, phase_end_time = NULL WHERE id = $2", [
             "results",
             drawing.room_id,
-          ])
+          ]);
         } else {
           // Start next round
           const promptResult = await pool.query("SELECT * FROM prompts ORDER BY RANDOM() LIMIT 1")
@@ -490,26 +567,26 @@ router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
 
     const room = roomResult.rows[0]
 
-    // Get final standings from game_results if game is in results phase
-    let players = []
+    // Get final standings from game_results if in results phase, otherwise calculate live standings
+    let players = [];
     if (room.current_phase === 'results') {
       const resultsQuery = await pool.query(
-        `SELECT user_id as id, username, score, rank 
-         FROM game_results 
-         WHERE room_id = $1::VARCHAR(6) 
+        `SELECT user_id as id, username, score
+         FROM game_results
+         WHERE room_id = $1
          ORDER BY rank ASC`,
         [roomId]
-      )
-      players = resultsQuery.rows
+      );
+      players = resultsQuery.rows;
     } else {
-      // Calculate current standings for in-progress game
+      // Calculate live standings for in-progress games
       const playersResult = await pool.query(
         `SELECT rp.user_id, u.username
          FROM room_players rp
          JOIN users u ON rp.user_id = u.id
          WHERE rp.room_id = $1`,
         [roomId]
-      )
+      );
 
       for (const player of playersResult.rows) {
         const ratingsResult = await pool.query(
@@ -518,20 +595,20 @@ router.get("/:roomId/leaderboard", authenticateToken, async (req, res) => {
            JOIN stars v ON d.id = v.drawing_id
            WHERE d.room_id = $1 AND d.artist_id = $2`,
           [roomId, player.user_id]
-        )
+        );
 
-        const avgRating = ratingsResult.rows[0].avg_rating || 0
-        const score = Math.round(avgRating * 20) // Convert to 0-100 scale
+        const avgRating = ratingsResult.rows[0].avg_rating || 0;
+        const score = Math.round(avgRating * 20); // Convert to 0-100 scale
 
         players.push({
           id: player.user_id,
           username: player.username,
           score,
-        })
+        });
       }
 
       // Sort players by score (highest first)
-      players.sort((a, b) => b.score - a.score)
+      players.sort((a, b) => b.score - a.score);
     }
 
     // Get all drawings with their ratings
