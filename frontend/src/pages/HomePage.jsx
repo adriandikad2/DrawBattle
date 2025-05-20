@@ -1010,14 +1010,12 @@ function HomePage() {
           </motion.div>
         </div>
       </motion.section>
-        {/* No CTA section - removed as requested */}
-
-      {/* Credits Section */}
+        {/* No CTA section - removed as requested */}      {/* Credits Section */}
       <section style={styles.credits}>
         <h3 style={styles.creditsTitle}>Project Credits</h3> {/* Changed title slightly */}
         <div style={styles.creditsGrid}> {/* Changed from ul to div with new style */}
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Adhi Rajasa Rafif" style={styles.creditImage} />
+            <img src="/src/assets/rafif.jpg" alt="Adhi Rajasa Rafif" style={styles.creditImage} />
             <div style={styles.creditName}>Adhi Rajasa Rafif</div>
             <div style={styles.creditId}>2306266943</div>
           </div>
@@ -1027,12 +1025,12 @@ function HomePage() {
             <div style={styles.creditId}>2306250711</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Fathan Yazid Satriani" style={styles.creditImage} />
+            <img src="/src/assets/fathan.JPG" alt="Fathan Yazid Satriani" style={styles.creditImage} />
             <div style={styles.creditName}>Fathan Yazid Satriani</div>
             <div style={styles.creditId}>2306250560</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Grace Yunike Margaretha Sitorus" style={styles.creditImage} />
+            <img src="/src/assets/grace.jpg" alt="Grace Yunike Margaretha Sitorus" style={styles.creditImage} />
             <div style={styles.creditName}>Grace Yunike Margaretha Sitorus</div>
             <div style={styles.creditId}>2306267031</div>
           </div>
