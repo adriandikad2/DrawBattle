@@ -24,7 +24,6 @@
   ![Express](https://img.shields.io/badge/API-Express-000000?style=for-the-badge&logo=express)
   ![Postgres](https://img.shields.io/badge/Database-PostgreSQL-336791?style=for-the-badge&logo=postgresql)
   ![Cloudinary](https://img.shields.io/badge/Media-Cloudinary-3448C5?style=for-the-badge&logo=cloudinary)
-  ![Google Chrome](https://img.shields.io/badge/Google%20Chrome-4285F4?style=for-the-badge&logo=GoogleChrome)
 </div>
 
 ## 📋 About
