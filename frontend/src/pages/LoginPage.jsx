@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { useTheme } from "../contexts/ThemeContext"
+import PasswordInput from "../components/PasswordInput"
 import { toast } from "react-toastify"
 import { motion } from "framer-motion"
 import AuthCanvas from "../components/AuthCanvas"
@@ -103,7 +104,7 @@ function LoginPage() {
             <label htmlFor="password">
               <span className="input-icon">🔒</span> Password
             </label>
-            <input              type="password"
+            <PasswordInput
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

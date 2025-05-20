@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { toast } from "react-toastify"
+import PasswordInput from "../components/PasswordInput"
 import { motion } from "framer-motion"
 import AuthCanvas from "../components/AuthCanvas"
 import "./AuthPage.css"
@@ -43,6 +44,11 @@ function RegisterPage() {
       return
     }
 
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long")
+      return
+    }
+
     setLoading(true)
     try {
       await register(username, password)
@@ -60,7 +66,8 @@ function RegisterPage() {
       className="auth-page"
       variants={pageVariants}
       initial="initial"
-      animate="animate"      exit="exit"
+      animate="animate"
+      exit="exit"
     >
       {/* Background canvas animation */}
       <AuthCanvas />
@@ -93,8 +100,7 @@ function RegisterPage() {
             <label htmlFor="password">
               <span className="input-icon">🔒</span> Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -107,8 +113,7 @@ function RegisterPage() {
             <label htmlFor="confirmPassword">
               <span className="input-icon">🔐</span> Confirm Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

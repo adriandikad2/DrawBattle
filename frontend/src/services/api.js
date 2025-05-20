@@ -22,6 +22,14 @@ api.interceptors.request.use(
   },
 )
 
+// User related API calls
+export const userService = {
+  updateProfile: (userData) => api.put("/auth/profile", userData),
+  updatePassword: (newPassword) => api.put("/auth/password", {
+    newPassword,
+  }),
+}
+
 // Room related API calls
 export const roomService = {
   getRooms: () => api.get("/rooms"),

@@ -100,4 +100,69 @@ router.post("/logout", (req, res) => {
   res.json({ message: "Logout successful" })
 })
 
+// Update profile
+router.put("/profile", authenticateToken, async (req, res) => {
+  try {
+    const { username } = req.body;
+    const userId = req.user.id;
+
+    // Check if new username already exists for different user
+    const userCheck = await pool.query(
+      "SELECT * FROM users WHERE username = $1 AND id != $2",
+      [username, userId]
+    );
+
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
+
+    // Update username
+    const result = await pool.query(
+      "UPDATE users SET username = $1 WHERE id = $2 RETURNING id, username",
+      [username, userId]
+    );
+
+    res.json({
+      message: "Profile updated successfully",
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Change password
+router.put("/password", authenticateToken, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
+    const userId = req.user.id;
+    const user = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(String(newPassword), salt);
+
+    // Update password
+    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [
+      hashedPassword,
+      userId,
+    ]);
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router

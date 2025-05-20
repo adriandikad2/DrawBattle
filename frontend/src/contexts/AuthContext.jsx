@@ -77,12 +77,38 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const updateProfile = async (userData) => {
+    try {
+      const response = await api.put("/auth/profile", userData)
+      setCurrentUser({ ...currentUser, ...response.data.user })
+      return response.data.user
+    } catch (error) {
+      console.error("Profile update failed", error)
+      throw error
+    }
+  }
+
+  const updatePassword = async (newPassword) => {
+    try {
+      const response = await api.put("/auth/password", { newPassword })
+      if (response.data.message === "Password updated successfully") {
+        return true;
+      }
+      throw new Error(response.data.message || "Failed to update password");
+    } catch (error) {
+      console.error("Password update failed", error)
+      throw error
+    }
+  }
+
   const value = {
     currentUser,
     login,
     register,
     logout,
     loading,
+    updateProfile,
+    updatePassword,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
