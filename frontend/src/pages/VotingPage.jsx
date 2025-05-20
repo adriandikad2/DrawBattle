@@ -30,10 +30,20 @@ function VotingPage() {
     // Helper to stop polling and navigate ONCE
     const stopPollingAndNavigate = (target) => {
       if (hasNavigatedRef.current) return;
-      hasNavigatedRef.current = true;
+      
+      // Stop all polling and clear timeouts first
       setPollingActive(false);
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-      if (autoVoteTimeout) clearTimeout(autoVoteTimeout);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      if (autoVoteTimeout) {
+        clearTimeout(autoVoteTimeout);
+        setAutoVoteTimeout(null);
+      }
+      
+      // Mark as navigated and then navigate
+      hasNavigatedRef.current = true;
       navigate(target);
     };
 
@@ -65,6 +75,11 @@ function VotingPage() {
         // Handle 204 No Content (voting is over)
         if (error?.response?.status === 204) {
           stopPollingAndNavigate(`/leaderboard/${roomId}`);
+        } else if (error?.response?.status === 404) {
+          // 404 likely means we're between phases - wait and retry
+          console.log("Drawing not ready yet, waiting...");
+          // Retry after a short delay
+          setTimeout(fetchDrawingToVoteInitial, 2000);
         } else {
           console.error("Failed to fetch drawing to vote", error);
           setError("Failed to load drawing. Please try again.");
@@ -118,17 +133,32 @@ function VotingPage() {
         // Handle 204 No Content (voting is over)
         if (error?.response?.status === 204) {
           stopPollingAndNavigate(`/leaderboard/${roomId}`);
+        } else if (error?.response?.status === 404) {
+          // Still transitioning between phases, just wait for next poll
+          console.log("Drawing not ready yet in poll, waiting...");
         } else {
           console.error("Failed to poll drawing to vote", error);
         }
       }
     };
 
-    fetchDrawingToVoteInitial();
-    pollingIntervalRef.current = setInterval(fetchDrawingToVoteSilent, 3000);
+    // Only start polling if we haven't navigated away
+    if (!hasNavigatedRef.current) {
+      fetchDrawingToVoteInitial();
+      pollingIntervalRef.current = setInterval(fetchDrawingToVoteSilent, 3000);
+    }
+
+    // Cleanup function
     return () => {
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-      if (autoVoteTimeout) clearTimeout(autoVoteTimeout);
+      setPollingActive(false);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      if (autoVoteTimeout) {
+        clearTimeout(autoVoteTimeout);
+        setAutoVoteTimeout(null);
+      }
     };
   }, [roomId, navigate, currentDrawing, timeLeft, autoVoteTimeout, pollingActive]);
 

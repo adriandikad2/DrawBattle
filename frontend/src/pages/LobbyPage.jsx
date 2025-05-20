@@ -13,12 +13,16 @@ function LobbyPage() {
   const [error, setError] = useState(null)
   const { currentTheme } = useTheme()
   useEffect(() => {
-    // Only leave all rooms ONCE per navigation to lobby using sessionStorage
-    if (!sessionStorage.getItem('didLeaveRooms')) {
-      roomService.leaveAllRooms()
-        .then(() => console.log("Successfully left all rooms"))
-        .catch((error) => console.error("Failed to leave rooms:", error));
-      sessionStorage.setItem('didLeaveRooms', 'true');
+    // Only leave all rooms when actually navigating to lobby-related paths
+    const lobbyPaths = ['/', '/create-room', '/join-room'];
+    if (lobbyPaths.includes(window.location.pathname)) {
+      // Use localStorage instead of sessionStorage to persist across refreshes
+      if (!localStorage.getItem('didLeaveRooms')) {
+        roomService.leaveAllRooms()
+          .then(() => console.log("Successfully left all rooms"))
+          .catch((error) => console.error("Failed to leave rooms:", error));
+        localStorage.setItem('didLeaveRooms', 'true');
+      }
     }
 
     // Initial fetch with loading state
@@ -57,7 +61,10 @@ function LobbyPage() {
     // On unmount, clear the flag so it works on next navigation
     return () => {
       clearInterval(interval);
-      sessionStorage.removeItem('didLeaveRooms');
+      // Only remove the flag if we're in lobby-related paths
+      if (lobbyPaths.includes(window.location.pathname)) {
+        localStorage.removeItem('didLeaveRooms');
+      }
     }
   }, [])
   return (

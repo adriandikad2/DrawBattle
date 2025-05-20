@@ -99,12 +99,43 @@ function DrawingPage() {
   const handleDrawingSubmit = async (drawingData) => {
     try {
       setLoading(true)
+      // First verify game state before submitting
+      const stateResponse = await gameService.getGameState(roomId)
+      
+      if (stateResponse.data.phase !== "drawing") {
+        toast.error("Room is no longer in drawing phase")
+        return
+      }
+
+      // Attempt to submit the drawing
       await gameService.submitDrawing(roomId, drawingData)
       setIsSubmitted(true)
       toast.success("Drawing submitted successfully!")
+      
+      // Wait a moment for the server to process the submission
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Verify the submission was processed
+      const verifyResponse = await gameService.getGameState(roomId)
+      if (!verifyResponse.data.hasSubmitted) {
+        toast.error("Drawing submission not confirmed. Please try again.")
+        setIsSubmitted(false)
+      }
     } catch (error) {
       console.error("Failed to submit drawing", error)
+      if (error.response?.status === 403) {
+        // If we get a 403, check if we're still in the room
+        try {
+          await gameService.getGameState(roomId)
+        } catch (stateError) {
+          if (stateError.response?.status === 403) {
+            navigate(`/room/${roomId}`) // Redirect back to room if we're no longer in it
+            return
+          }
+        }
+      }
       toast.error(error.response?.data?.message || "Failed to submit drawing")
+      setIsSubmitted(false)
     } finally {
       setLoading(false)
     }
