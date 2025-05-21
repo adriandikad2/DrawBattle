@@ -1,4 +1,12 @@
 /* PageStyles.css - Colorful styles for all pages except Login and Register */
+html, body, #root {
+  width: 100%;
+  min-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
 
 /* Global styles and animations */
 @keyframes gradientFlow {

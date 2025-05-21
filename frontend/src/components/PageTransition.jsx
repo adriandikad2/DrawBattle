@@ -19,7 +19,7 @@ function PageTransition({ children }) {
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.4,
+        duration: 0.2,  // Reduced from 0.4
         ease: "easeOut"
       }
     },
@@ -28,7 +28,7 @@ function PageTransition({ children }) {
       y: isAuthPage ? -20 : 0,
       scale: isAuthPage ? 0.98 : 1,
       transition: {
-        duration: 0.3,
+        duration: 0.15,  // Reduced from 0.3
         ease: "easeIn"
       }
     }
@@ -36,12 +36,19 @@ function PageTransition({ children }) {
 
   return (
     <motion.div
-      key={location.pathname}
       initial="initial"
       animate="animate"
       exit="exit"
       variants={pageVariants}
-      style={{ width: "100%", height: "100%" }}
+      style={{ 
+        position: "absolute",
+        width: "100%",
+        minHeight: "100vh",
+        left: 0,
+        top: 0,
+        display: "flex",
+        flexDirection: "column"
+      }}
     >
       {children}
     </motion.div>

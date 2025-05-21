@@ -10,6 +10,12 @@ import { FaPencilAlt, FaVoteYea, FaTrophy, FaPalette, FaUserFriends, FaChartLine
 import './HomePage.css'
 import '../styles/PageStyles.css'
 
+// Importing pictures of collaborators
+import adrian from '../assets/adrian.jpg';
+import ifan from '../assets/ifan.JPG';
+import grace from '../assets/grace.jpg';
+import rafif from '../assets/rafif.jpg';
+
 // --- Canvas Drawing Logic ---
 const canvasColors = {
   red: '#f43f5e',
@@ -451,9 +457,12 @@ function HomePage() {
       display: 'flex',
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
       padding: '4rem 2rem',
       position: 'relative',
       minHeight: '80vh',
+      maxWidth: '1200px',
+      margin: '0 auto',
       '@media (max-width: 768px)': {
         flexDirection: 'column-reverse',
         padding: '1rem 1rem 2rem',
@@ -465,6 +474,7 @@ function HomePage() {
       maxWidth: '600px',
       position: 'relative',
       zIndex: 2,
+      marginRight: '2rem',
       '@media (max-width: 768px)': {
         width: '100%',
         maxWidth: '100%',
@@ -472,7 +482,8 @@ function HomePage() {
         flexDirection: 'column',
         alignItems: 'center',
         marginTop: '1rem',
-        padding: '0 0.75rem', // Add some horizontal padding
+        marginRight: '0',
+        padding: '0 0.75rem',
       },
     },    heroTitle: {
       fontSize: '3.5rem',
@@ -1010,29 +1021,27 @@ function HomePage() {
           </motion.div>
         </div>
       </motion.section>
-        {/* No CTA section - removed as requested */}
-
-      {/* Credits Section */}
+        {/* No CTA section - removed as requested */}      {/* Credits Section */}
       <section style={styles.credits}>
         <h3 style={styles.creditsTitle}>Project Credits</h3> {/* Changed title slightly */}
         <div style={styles.creditsGrid}> {/* Changed from ul to div with new style */}
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Adhi Rajasa Rafif" style={styles.creditImage} />
+            <img src={rafif} alt="Adhi Rajasa Rafif" style={styles.creditImage} />
             <div style={styles.creditName}>Adhi Rajasa Rafif</div>
             <div style={styles.creditId}>2306266943</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/adrian.jpg" alt="Adrian Dika Darmawan" style={styles.creditImage} />
+            <img src={adrian} alt="Adrian Dika Darmawan" style={styles.creditImage} />
             <div style={styles.creditName}>Adrian Dika Darmawan</div>
             <div style={styles.creditId}>2306250711</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Fathan Yazid Satriani" style={styles.creditImage} />
+            <img src={ifan} alt="Fathan Yazid Satriani" style={styles.creditImage} />
             <div style={styles.creditName}>Fathan Yazid Satriani</div>
             <div style={styles.creditId}>2306250560</div>
           </div>
           <div style={styles.creditItem}>
-            <img src="/src/assets/ifan.JPG" alt="Grace Yunike Margaretha Sitorus" style={styles.creditImage} />
+            <img src={grace} alt="Grace Yunike Margaretha Sitorus" style={styles.creditImage} />
             <div style={styles.creditName}>Grace Yunike Margaretha Sitorus</div>
             <div style={styles.creditId}>2306267031</div>
           </div>
