@@ -159,20 +159,18 @@ node server.js
 This project was developed as a final project for Database Systems Practicum by:
 
 <div align="center">
-
 | Photo | Name | Student ID | GitHub |
 |:-----:|:-----|:----------:|:------:|
 | <img src="frontend/src/assets/rafif.jpg" width="100" height="100" style="border-radius: 50%;"> | Adhi Rajasa Rafif | 2306266943 | [AdhiRajasaRafif02](https://github.com/AdhiRajasaRafif02) |
 | <img src="frontend/src/assets/adrian.jpg" width="100" height="100" style="border-radius: 50%;"> | Adrian Dika Darmawan | 2306250711 | [adriandikad2](https://github.com/adriandikad2) |
-| <img src="frontend/src/assets/fathan.JPG" width="100" height="100" style="border-radius: 50%;"> | Fathan Yazid Satriani | 2306250560 | [IfanFYS](https://github.com/IfanFYS) |
+| <img src="frontend/src/assets/ifan.JPG" width="100" height="100" style="border-radius: 50%;"> | Fathan Yazid Satriani | 2306250560 | [IfanFYS](https://github.com/IfanFYS) |
 | <img src="frontend/src/assets/grace.jpg" width="100" height="100" style="border-radius: 50%;"> | Grace Yunike Margaretha Sitorus | 2306267031 | [graceyunike](https://github.com/graceyunike) |
+</div>
 
 ## License
 
 This project is licensed under the MIT License.  
 See the [LICENSE](LICENSE) file for more details.
-
-</div>
 
 ---
 
