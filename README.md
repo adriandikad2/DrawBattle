@@ -169,7 +169,7 @@ This project was developed as a final project for Database Systems Practicum by:
 
 </div>
 
-## License
+## ©️ License
 
 This project is licensed under the MIT License.  
 See the [LICENSE](LICENSE) file for more details.
