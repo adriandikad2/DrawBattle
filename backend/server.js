@@ -33,7 +33,28 @@ app.use("/api/game", gameRoutes)
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok", message: "Server is running" })
+  res.status(200).json({ 
+    status: "ok", 
+    message: "DrawBattle API is running",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  })
+})
+
+// Root path endpoint with API information
+app.get("/", (req, res) => {
+  res.status(200).json({
+    name: "DrawBattle API",
+    version: "1.0.0",
+    description: "Backend API for DrawBattle application",
+    endpoints: {
+      auth: "/api/auth",
+      rooms: "/api/rooms",
+      game: "/api/game",
+      health: "/api/health"
+    },
+    documentation: "Access specific endpoints for functionality"
+  })
 })
 
 // Error handling middleware
