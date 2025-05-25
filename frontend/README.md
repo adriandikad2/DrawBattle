@@ -1,11 +1,30 @@
-# React + Vite
+# DrawBattle Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for DrawBattle, a multiplayer drawing and voting game.
 
-Currently, two official plugins are available:
+## Environment Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Create a `.env` file with the following variables:
+
+```
+VITE_API_URL=https://drawbattle-sbd-be.vercel.app/api
+VITE_CLOUDINARY_CLOUD_NAME=drawingbattle
+```
+
+For local development, use:
+```
+VITE_API_URL=http://localhost:5000/api
+```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
 
 ## Expanding the ESLint configuration
 
